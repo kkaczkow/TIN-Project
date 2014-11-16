@@ -3,7 +3,7 @@ server class
 */
 
 
-class Server {
+class Server : public Runnable {
 	list<Agent> agents;
 
 public:

@@ -24,7 +24,7 @@ void Server::listen() {
 		throw ; // FIXME
 	while ((int cSock = accept(serverSocket)) > 0) {
 		// create new agent & handle him
-		agents.emplace_back(*this, cSock)->run();
+		Scheduler::createThread(*agents.emplace_back(*this, cSock));
 	}
 }
 
