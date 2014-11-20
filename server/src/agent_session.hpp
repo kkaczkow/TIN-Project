@@ -12,11 +12,22 @@
 
 #include <memory>
 
+typedef unsigned char uchar;
+
 namespace AgentRepo3000 {
 
 class agent_session : public std::enable_shared_from_this<agent_session> {
 	boost::asio::ip::tcp::socket socket;
-	static const char* vim;
+	enum message_t : uchar {
+		REGISTER = 'r'
+	};
+
+	static const char* registered;
+
+	message_t message_type;
+	void do_read_requests();
+	void handle_vim_request();
+
 public:
 	agent_session(boost::asio::ip::tcp::socket socket)
 		: socket(std::move(socket)) {}
