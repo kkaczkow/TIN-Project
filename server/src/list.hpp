@@ -1,7 +1,7 @@
-#ifndef AGENTREPO3000_VECTOR_HPP
-#define AGENTREPO3000_VECTOR_HPP
+#ifndef AGENTREPO3000_LIST_HPP
+#define AGENTREPO3000_LIST_HPP
 
-#include <vector>
+#include <list>
 #include <algorithm>
 #include <iterator>
 #include <initializer_list>
@@ -9,28 +9,43 @@
 namespace AgentRepo3000 {
 
 template <typename T>
-class vector {
+class list {
 public:
-	class const_iterator : public virtual std::vector<T>::const_iterator {
-		const vector<T>* v;
+	class const_iterator : public virtual std::list<T>::const_iterator {
+		const list<T>* v;
 	public:
-		const_iterator(const vector<T>* v, typename std::vector<T>::const_iterator iter) : std::vector<T>::const_iterator(iter), v(v) {}
+		const_iterator(const list<T>* v, typename std::list<T>::const_iterator iter) : std::list<T>::const_iterator(iter), v(v) {}
 		~const_iterator() {
 			v->iterators.erase(std::remove(v->iterators.begin(), v->iterators.end(), this));
 		}
 	};
-	class iterator : public virtual const_iterator, public virtual std::vector<T>::iterator {
+	class iterator : public virtual const_iterator, public virtual std::list<T>::iterator {
 	public:
-		iterator(const vector<T>* v, typename std::vector<T>::iterator iter) : const_iterator(v, iter), std::vector<T>::iterator(iter) {}
+		iterator(const list<T>* v, typename std::list<T>::iterator iter) : const_iterator(v, iter), std::list<T>::iterator(iter) {}
 	};
 	friend class const_iterator;
 	friend class iterator;
 private:
-	std::vector<T> data;
-	mutable std::vector<const_iterator*> iterators;
+	std::list<T> data;
+	mutable std::list<const_iterator*> iterators;
 public:
-	vector(std::size_t N, T t = T()) : data(N, t) {}
-	vector(std::initializer_list<T> list) : data{list} {}
+	typedef typename std::list<T>::reference reference;
+	typedef typename std::list<T>::const_reference const_reference;
+	list() = default;
+	list(std::size_t N, T t = T()) : data(N, t) {}
+	list(std::initializer_list<T> list) : data{list} {}
+	reference front() {
+	  return data.front();
+	}
+	const_reference front() const {
+	  return data.front();
+	}
+	reference back() {
+	  return data.back();
+	}
+	const_reference back() const {
+	  return data.back();
+	}
 	iterator begin() {
 		return {this, data.begin()};
 	}
@@ -67,4 +82,4 @@ public:
 
 }
 
-#endif /* AGENTREPO3000_VECTOR_HPP */
+#endif /* AGENTREPO3000_LIST_HPP */

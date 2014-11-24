@@ -19,7 +19,7 @@ server::server(boost::asio::io_service& io_service) :
 void server::do_accept() {
 	acceptor.async_accept(socket, [this](boost::system::error_code ec){
 		if (!ec) {
-			std::make_shared<agent_session>(std::move(socket))->run();
+			std::make_shared<agent_session>(std::move(socket), storage)->run();
 		}
 		do_accept();
 	});

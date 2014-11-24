@@ -5,8 +5,8 @@
  *      Author: konrad
  */
 
-#ifndef AGENTREPO3000_AGENT_SESSION_HPP_
-#define AGENTREPO3000_AGENT_SESSION_HPP_
+#ifndef AGENTREPO3000_AGENT_SESSION_HPP
+#define AGENTREPO3000_AGENT_SESSION_HPP
 
 #include <boost/asio.hpp>
 
@@ -15,9 +15,14 @@
 typedef unsigned char uchar;
 
 namespace AgentRepo3000 {
+  
+class agent_storage;
+class agent_data;
 
 class agent_session : public std::enable_shared_from_this<agent_session> {
 	boost::asio::ip::tcp::socket socket;
+	agent_storage& storage;
+	agent_data* data;
 	enum message_t : uchar {
 		REGISTER = 'r'
 	};
@@ -26,14 +31,14 @@ class agent_session : public std::enable_shared_from_this<agent_session> {
 
 	message_t message_type;
 	void do_read_requests();
-	void handle_vim_request();
+	void handle_register();
 
 public:
-	agent_session(boost::asio::ip::tcp::socket socket)
-		: socket(std::move(socket)) {}
+	agent_session(boost::asio::ip::tcp::socket socket, agent_storage& storage)
+		: socket(std::move(socket)), storage(storage) {}
 	void run();
 };
 
 } /* namespace AgentRepo3000 */
 
-#endif /* AGENTREPO3000_AGENT_SESSION_HPP_ */
+#endif /* AGENTREPO3000_AGENT_SESSION_HPP */
