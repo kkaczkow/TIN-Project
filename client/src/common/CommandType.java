@@ -2,13 +2,10 @@ package common;
 
 public enum CommandType {
 	REGISTER("register"),
-	REGISTERED_ID("registered"),
 	SERVICES("services"),
 	LIST_AGENTS("list agents"),
-	AGENTS_LIST("agents list"),
 	LIST_SERVICES("list services"),
-	SERVICES_LIST("services list"),
-	CONN_REQUEST("conn request"),
+	DISCONNECT("disconnect"),
 	CONNECT("connect");
 	
 	private String command;
@@ -22,14 +19,14 @@ public enum CommandType {
 	}
 	
 	public static CommandType fromString(String command) {
-	    if (command != null) {
-	      for (CommandType tmp: CommandType.values()) {
-	        if (command.equalsIgnoreCase(tmp.command)) {
-	          return tmp;
-	        }
-	      }
-	    }
-	    return null;
-	  }
+		if (command != null) {
+			for (CommandType tmp : CommandType.values()) {
+				if (command.equalsIgnoreCase(tmp.command)) {
+					return tmp;
+				}
+			}
+		}
+		return null;
+	}
 
 }
