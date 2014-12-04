@@ -13,16 +13,7 @@ public class Controller {
 	}
 
 	/**
-	 * Command format: 
-	 *  1 - register
-  		2 - registered id
-  		3 - services
-		4 - list agents
-  		5 - agents list
-  		6 - list services
-  		7 - services list
-  		8 - conn request
-  		9 - connect
+	 * 
 	 * @param args
 	 */
 	public static void main(String[] args) {
@@ -35,32 +26,17 @@ public class Controller {
 		
 		switch(CommandType.fromString(command)) {
 		
-		case REGISTER:
-			break;
-			
-		case REGISTERED_ID:
-			break;
-			
-		case SERVICES:
-			break;
-			
-		case LIST_AGENTS:
-			break;
-			
-		case AGENTS_LIST:
-			break;
-			
-		case LIST_SERVICES:
-			break;
-			
-		case SERVICES_LIST:
-			break;
-			
-		case CONN_REQUEST:
+		case REGISTER:SERVICES:LIST_AGENTS:LIST_SERVICES:
+			mConnector.sendData(command);
+			mConnector.getData();
 			break;
 			
 		case CONNECT:
 			mConnector.connect(serverName, port);
+			break;
+			
+		case DISCONNECT:
+			mConnector.disconnect();
 			break;
 		
 			default:
