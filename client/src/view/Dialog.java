@@ -4,13 +4,10 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.concurrent.BlockingQueue;
-
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-
-import common.CommandType;
 import common.events.ClientEvent;
 import common.events.ConnectEvent;
 import common.events.DisconnectEvent;

@@ -12,7 +12,7 @@ import view.View;
 public final class Client {
 	
 	private static BlockingQueue<ClientEvent> mBlockingQueue = new LinkedBlockingQueue<ClientEvent>();
-
+	
 	/**
 	 * 
 	 * @param args

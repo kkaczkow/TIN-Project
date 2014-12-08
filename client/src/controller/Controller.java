@@ -35,7 +35,6 @@ public class Controller {
             processEvents();
         }
     }
-
 	
 	
 	public static void processEvents() {

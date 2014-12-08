@@ -12,4 +12,5 @@ public abstract class ClientEvent {
 	public CommandType getCommand() {
 		return command;
 	}
+	
 }

@@ -27,5 +27,4 @@ public class Model {
 	public void setServicesList(List<String> servicesList) {
 		this.servicesList = servicesList;
 	}
-
 }

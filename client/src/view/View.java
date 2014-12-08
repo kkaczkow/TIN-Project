@@ -1,7 +1,6 @@
 package view;
 
 import java.util.concurrent.BlockingQueue;
-
 import common.events.ClientEvent;
 
 public class View{
