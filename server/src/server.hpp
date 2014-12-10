@@ -9,14 +9,14 @@
 namespace AgentRepo3000 {
 
 class server {
-	static const int PORT;
+  static const int PORT;
 
-	boost::asio::ip::tcp::socket socket;
-	boost::asio::ip::tcp::acceptor acceptor;
-	agent_storage storage;
-	void do_accept();
+  boost::asio::ip::tcp::socket socket;
+  boost::asio::ip::tcp::acceptor acceptor;
+  agent_storage storage;
+  void do_accept();
 public:
-	server(boost::asio::io_service& io_service);
+  server(boost::asio::io_service& io_service);
 };
 
 }
