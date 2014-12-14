@@ -1,15 +1,15 @@
 package common;
 
 public enum CommandType {
-	LIST_AGENTS("list agents", (char)0x03),
-	LIST_SERVICES("list services", (char)0x04),
+	LIST_AGENTS("list agents", (byte)0x03),
+	LIST_SERVICES("list services", (byte)0x04),
 	DISCONNECT("disconnect"),
 	CONNECT("connect");
 	
 	private String command;
-	private char byteToSend;
+	private byte byteToSend;
 	
-	CommandType(String command, char byteToSend) {
+	CommandType(String command, byte byteToSend) {
 		this.command = command;
 		this.byteToSend = byteToSend;
 	}
@@ -18,10 +18,9 @@ public enum CommandType {
 		this.command = command;
 	}
 	
-	public String getCommand() {
-		return this.command;
+	public  byte getByteToSend () {
+		return byteToSend;
 	}
-	
 	public static CommandType fromString(String command) {
 		if (command != null) {
 			for (CommandType tmp : CommandType.values()) {

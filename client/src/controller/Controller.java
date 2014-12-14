@@ -1,8 +1,10 @@
 package controller;
 
 import java.util.concurrent.BlockingQueue;
+
 import model.Model;
 import view.View;
+import common.CommandType;
 import common.events.ClientEvent;
 
 public class Controller {
@@ -16,16 +18,16 @@ public class Controller {
 	
 	public Controller(Model mModel, BlockingQueue <ClientEvent> mBlockingQueue) {
 		mConnector = new Connector();
-		this.mModel = mModel;
-		this.mBlockingQueue = mBlockingQueue;
+		Controller.mModel = mModel;
+		Controller.mBlockingQueue = mBlockingQueue;
 	}
 	
 	
 	public Controller(Model mModel, View mWiew, BlockingQueue <ClientEvent> mBlockingQueue) {
 		mConnector = new Connector();
-		this.mView = mView;
-		this.mModel = mModel;
-		this.mBlockingQueue = mBlockingQueue;
+		Controller.mView = mView;
+		Controller.mModel = mModel;
+		Controller.mBlockingQueue = mBlockingQueue;
 	}
 	
 	public void go() {
@@ -44,15 +46,17 @@ public class Controller {
 			
 			switch(event.getCommand()) {
 			case LIST_AGENTS:
-				mConnector.sendData("list agents");
-				mConnector.getData();
 				System.out.println("list agents");
+				System.out.println(CommandType.LIST_AGENTS.getByteToSend());
+				mConnector.sendData(CommandType.LIST_AGENTS.getByteToSend());
+				mConnector.getData();
 				break;
 				
 			case LIST_SERVICES:
-				mConnector.sendData("list services");
-				mConnector.getData();
 				System.out.println("list services");
+				System.out.println(CommandType.LIST_SERVICES.getByteToSend());
+				mConnector.sendData(CommandType.LIST_SERVICES.getByteToSend());
+				mConnector.getData();
 				break;	
 				
 			case CONNECT:

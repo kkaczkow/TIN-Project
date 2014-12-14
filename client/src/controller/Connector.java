@@ -45,13 +45,13 @@ public class Connector {
 	 * Sending message to server
 	 * @param message - command
 	 */
-	public void sendData(String message) {
-
+	//public void sendData(String message) {
+	public void sendData(byte message) {
         try {
         	OutputStream outToServer = mClient.getOutputStream();
         	DataOutputStream out = new DataOutputStream(outToServer);
-			out.writeUTF(message
-			             + mClient.getLocalSocketAddress());
+        	out.writeByte(message);
+			//out.writeUTF(message + mClient.getLocalSocketAddress());
 			out.close();
 		} catch(NullPointerException e) {
 			e.printStackTrace();
