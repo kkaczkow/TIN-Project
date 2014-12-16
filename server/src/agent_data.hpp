@@ -2,18 +2,39 @@
 #define AGENTREPO3000_AGENT_DATA_HPP
 
 #include <boost/asio.hpp>
-#include "list.hpp"
+#include <vector>
+#include <set>
 
 namespace AgentRepo3000 {
 
 struct service_data {
-  unsigned short port;
-  unsigned short name;
+  uint8_t flags;
+  uint16_t id;
+  uint16_t port;
+  
+  std::vector<boost::asio::mutable_buffer> to_buffers() {
+    return {
+      boost::asio::buffer(&flags, 1),
+      boost::asio::buffer(&id, 2),
+      boost::asio::buffer(&port, 2)
+    };
+  }
+  std::vector<boost::asio::mutable_buffer> data_to_buffers() {
+    return {
+      boost::asio::buffer(&id, 2),
+      boost::asio::buffer(&port, 2)
+    };
+  }
+  
+  bool operator<(const service_data& o) const {
+    return flags < o.flags ||
+      (flags == o.flags && (id < o.id || (id == o.id && port < o.port)));
+  }
 };
 
 struct agent_data {
-  list<boost::asio::ip::address> ip_addresses;
-  list<service_data> services;
+  std::vector<boost::asio::ip::address> ip_addresses;
+  std::set<service_data> services;
 };
 
 }
