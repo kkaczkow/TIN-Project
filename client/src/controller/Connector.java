@@ -10,11 +10,18 @@ import java.net.Socket;
 public class Connector {
 
 	private Socket mClient;
+	private boolean isServerConnected;
+	
+	public Connector() {
+		isServerConnected = false;
+	}
 	
 	public void connect(final String serverName, final int portNumber) {
 		
 	    try {
+	    	System.out.println("Client: Connecting to " + serverName + " on port " + portNumber);
 	    	mClient = new Socket(serverName, portNumber);
+	    	isServerConnected = true;
 	    }
 	    catch (IOException e) {
 	        System.out.println(e);
@@ -62,11 +69,16 @@ public class Connector {
 	
 	public void disconnect() {
 		try {
-	           mClient.close();
+			System.out.println("Client: Close()");
+	        mClient.close();
 	    } 
 	    catch (IOException e) {
 	       System.out.println(e);
 	    }
+	}
+	
+	public boolean isServerConnected() {
+		return isServerConnected;
 	}
     
 }
