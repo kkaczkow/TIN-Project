@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -20,6 +21,9 @@ public class ClientTest {
 	private static Controller mController;
 	private static BlockingQueue<ClientEvent> mBlockingQueue;
 	
+	/**
+	 * Test class initialization
+	 */
 	@BeforeClass
 	public static void init() {
 		mServer = new ServerTestClass();
@@ -28,8 +32,11 @@ public class ClientTest {
 		mServer.setServerConnectionCounter(0);
 	}
 
+	/**
+	 * Testing connection with fake server.
+	 */
 	@Test
-	public void test() {
+	public void ConnectionWithServerTest() {
 		
 		// polaczenie serwer- klient
 		mServer.start();
@@ -45,6 +52,25 @@ public class ClientTest {
 		
 		System.out.println("Test passed.");
 		//fail("Not yet implemented");
+		
+	}
+	
+	/**
+	 * Unimplemented test
+	 */
+	@Test
+	public void AnotherTest() {
+		
+		//TODO
+		fail("Not yet implemented");
+		
+	}
+	
+	/**
+	 * Clean up method
+	 */
+	@AfterClass
+	public static void cleanup() {
 		
 	}
 
