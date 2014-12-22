@@ -20,7 +20,7 @@ class agent_session : public std::enable_shared_from_this<agent_session> {
   boost::asio::ip::tcp::socket socket;
   agent_storage& storage;
   uint32_t id;
-  agent_data* data;
+  std::shared_ptr<agent_data> data;
 
   proto::message message_type;
   void do_read_requests();

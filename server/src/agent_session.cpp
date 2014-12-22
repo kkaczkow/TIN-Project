@@ -61,6 +61,7 @@ class ip_address_list_reader :
 	  boost::asio::ip::address_v4::bytes_type end_of_list;
 	  end_of_list.fill(0);
 	  if (ipv4 != end_of_list) {
+	    std::clog << "Read ipv4 address: " << boost::asio::ip::address_v4(ipv4).to_string() << std::endl;
 	    ip_addresses.emplace_back(boost::asio::ip::address_v4(ipv4));
 	    do_read_ipv4();
 	  }
@@ -81,9 +82,11 @@ class ip_address_list_reader :
 	  boost::asio::ip::address_v6::bytes_type end_of_list;
 	  end_of_list.fill(0);
 	  if (ipv6 != end_of_list) {
+	    std::clog << "Read ipv6 address: " << boost::asio::ip::address_v6(ipv6).to_string() << std::endl;
 	    ip_addresses.push_back(boost::asio::ip::address_v6(ipv6));
 	    do_read_ipv6();
 	  } else {
+	    std::clog << "Read all ip addressess" << std::endl;
 	    after(ec, ip_addresses);
 	  }
 	} else {
@@ -134,6 +137,8 @@ class services_reader :
     async_read(socket, service.data_to_buffers(),
       [this, self](error_code ec, std::size_t) {
 	if (!ec) {
+	  service.id = ntohs(service.id);
+	  service.port = ntohs(service.port);
 	  services.insert(service);
 	  do_read_flags();
 	}
@@ -152,14 +157,22 @@ public:
   }
 };
 
+static proto::message registered_id = proto::message::REGISTERED_ID;
+
 void agent_session::handle_register() {
   auto self(shared_from_this());
   id = storage.register_agent();
+  data = storage.agent(id);
   auto reader = std::make_shared<ip_address_list_reader>(socket);
   reader->read([this,self](boost::system::error_code ec, std::vector<boost::asio::ip::address> ip_addresses) {
     if (!ec) {
       data->ip_addresses = std::move(ip_addresses);
-      async_write(socket, boost::asio::buffer(&id, 4), [this,self](boost::system::error_code ec, std::size_t) {
+      std::vector<boost::asio::const_buffer> buffers{
+	  boost::asio::buffer(&registered_id, 1),
+	  boost::asio::buffer(&id, 4)
+      };
+      async_write(socket, buffers, [this,self](boost::system::error_code ec, std::size_t) {
+	std::clog << "Sent id" << std::endl;
 	if (!ec)
 	  do_read_requests();
       });
@@ -173,53 +186,113 @@ void agent_session::handle_services() {
   auto reader = std::make_shared<services_reader>(socket);
   reader->read([this,self](boost::system::error_code ec, std::set<service_data> services) {
     if (!ec) {
-      data->services = std::move(services);
+      std::clog << "Registered services: " << std::endl;
+      for (auto&& service : services) {
+	std::clog << '\t' << service.id << '@' << service.port << std::endl;
+      }
+      if (data)
+	data->services = std::move(services);
       do_read_requests();
     }
   });
 }
+
+static const proto::message agent_list = proto::message::AGENT_LIST;
 
 class agent_list_writer :
   public std::enable_shared_from_this<agent_list_writer> {
   
   typedef std::function<void(boost::system::error_code ec)> after_type;
   
+  
+  
   boost::asio::ip::tcp::socket& socket;
   agent_storage& storage;
   after_type after;
   
   uint32_t last_id;
+  std::vector<boost::asio::const_buffer> buffers;
   std::vector<boost::asio::ip::address_v4::bytes_type> ipv4;
   std::vector<boost::asio::ip::address_v6::bytes_type> ipv6;
   
   void do_write_first() {
-    storage.agents().begin();
+    buffers.push_back(boost::asio::buffer(&agent_list, 1));
+    auto it = storage.agents().begin();
+    if (it != storage.agents().end()) {
+      last_id = it->first;
+      do_write_agent(it->second);
+    } else  {
+      do_write_end_of_list();
+    } 
   }
   
-  void do_write_agent(agent_data& data) {
+  void do_write_next() {
+    buffers.clear();
+    auto it = storage.agents().upper_bound(last_id);
+    if (it != storage.agents().end()) {
+      last_id = it->first;
+      do_write_agent(it->second);
+    } else  {
+      do_write_end_of_list();
+    }
+  }
+  
+  void do_write_agent(std::shared_ptr<agent_data> data) {
     auto self(shared_from_this());
+    ipv4.clear();
+    ipv6.clear();
+    for (auto&& addr : data->ip_addresses) {
+      if (addr.is_v4())
+	ipv4.push_back(addr.to_v4().to_bytes());
+      else if (addr.is_v6())
+	ipv6.push_back(addr.to_v6().to_bytes());
+    }
+    boost::asio::ip::address_v4::bytes_type end_of_ipv4;
+    end_of_ipv4.fill(0);
+    ipv4.push_back(end_of_ipv4);
+    boost::asio::ip::address_v6::bytes_type end_of_ipv6;
+    end_of_ipv6.fill(0);
+    ipv6.push_back(end_of_ipv6);
+    
+    buffers.push_back(boost::asio::buffer(&last_id, 4));
+    for (auto& data : ipv4)
+      buffers.push_back(boost::asio::buffer(data, data.size()));
+    for (auto& data : ipv6)
+      buffers.push_back(boost::asio::buffer(data, data.size()));
+    async_write(socket, buffers, [this,self](boost::system::error_code ec, std::size_t) {
+      if (!ec)
+	do_write_next();
+      else
+	after(ec);
+    });
   }
   
   void do_write_end_of_list() {
     auto self(shared_from_this());
     last_id = 0;
-    async_write(socket, boost::asio::buffer(&last_id, 4), [this,self](boost::system::error_code ec, std::size_t) {
+    buffers.push_back(boost::asio::buffer(&last_id, 4));
+    async_write(socket, buffers, [this,self](boost::system::error_code ec, std::size_t) {
       after(ec);
     });
-  }
-  
+  }  
   
 public:
   agent_list_writer(boost::asio::ip::tcp::socket& socket, agent_storage& storage) :
     socket(socket), storage(storage) {}
   void write(after_type after) {
+    this->after = after;
     do_write_first();
   }
 };
 
 
 void agent_session::handle_list_agents() {
-  //FIXME
+  auto self(shared_from_this());
+  auto writer = std::make_shared<agent_list_writer>(socket, storage);
+  writer->write([this,self](boost::system::error_code ec) {
+    if(!ec)
+      do_read_requests();
+  });
 }
 
 void agent_session::handle_list_services() {
