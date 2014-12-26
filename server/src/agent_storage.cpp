@@ -7,6 +7,10 @@ uint32_t agent_storage::register_agent() {
   return last_id;
 }
 
+void agent_storage::unregister_agent(uint32_t id) {
+  m_agents.erase(id);
+}
+
 std::shared_ptr<agent_data> agent_storage::agent(uint32_t id) {
   return m_agents.at(id);
 }

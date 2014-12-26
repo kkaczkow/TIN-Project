@@ -4,7 +4,9 @@
 #include <boost/asio.hpp>
 
 #include <memory>
+#include <iostream>
 
+#include "logging/logging.hpp"
 #include "proto/messages.hpp"
 
 typedef unsigned char uchar;
@@ -28,10 +30,13 @@ class agent_session : public std::enable_shared_from_this<agent_session> {
   void handle_services();
   void handle_list_agents();
   void handle_list_services();
+  
+  std::ostream& log(logging::level lvl) const;
 
 public:
   agent_session(boost::asio::ip::tcp::socket socket, agent_storage& storage)
     : socket(std::move(socket)), storage(storage) {}
+  ~agent_session();
   void run();
 };
 

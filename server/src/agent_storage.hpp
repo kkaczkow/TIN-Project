@@ -21,6 +21,11 @@ public:
    * @returns id of the newly registered agent
    */
   uint32_t register_agent();
+  /** Unregister an agent
+   * 
+   * @param id of agent to unregister
+   */
+  void unregister_agent(uint32_t id);
   /** Returns agent_data for the given id.
    * 
    * @param id id of the agent data to fetch

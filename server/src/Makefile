@@ -1,4 +1,4 @@
-OBJECTS = server.o agent_storage.o agent_session.o
+OBJECTS = server.o agent_storage.o agent_session.o readers.o writers.o
 CXXFLAGS = --std=c++11
 
 .PHONY: all clean

@@ -1,8 +1,8 @@
 #include <netinet/in.h>
 #include <iostream>
-#include <functional>
-#include <algorithm>
 #include <vector>
+#include "readers.hpp"
+#include "writers.hpp"
 #include "agent_session.hpp"
 #include "agent_storage.hpp"
 
@@ -11,14 +11,32 @@ using boost::asio::async_write;
 using boost::system::error_code;
 
 namespace AgentRepo3000 {
+  
+using logging::level;
+
+std::ostream& agent_session::log(logging::level lvl) const {
+  auto endpoint = socket.remote_endpoint();
+  return std::clog << "["
+    << endpoint.address().to_string()
+    << ':' << endpoint.port()
+    << "]: ";
+}
+
+agent_session::~agent_session() {
+  if (data) {
+    storage.unregister_agent(id);
+    log(level::INFO) << "Unregistered." << std::endl;
+  }
+  log(level::INFO) << "Disconnected." << std::endl;
+}
 
 void agent_session::do_read_requests() {
-  
   auto self(shared_from_this());
   async_read(socket, boost::asio::buffer(&message_type, 1),
     [this, self](error_code ec, std::size_t) {
     using proto::message;
     if (!ec) {
+      log(level::TRACE) << "Got message, type=" << ((int)message_type) << std::endl;
       switch (message_type) {
       case message::REGISTER:
 	handle_register();
@@ -33,129 +51,12 @@ void agent_session::do_read_requests() {
 	handle_list_services();
 	break;
       default:
-	; // FIXME wrong message type
+	 // FIXME wrong message type
+	log(level::ERROR) << "Read wrong message type." << std::endl;
       }
     }
   });
 }
-
-class ip_address_list_reader :
-  public std::enable_shared_from_this<ip_address_list_reader> {
-  typedef std::function<void(boost::system::error_code ec, std::vector<boost::asio::ip::address>)> after_type;
-  
-  boost::asio::ip::tcp::socket& socket;
-  after_type after;
-  
-  boost::asio::ip::address_v4::bytes_type ipv4;
-  boost::asio::ip::address_v6::bytes_type ipv6;
-  
-  
-  std::vector<boost::asio::ip::address> ip_addresses;
-  
-  
-  void do_read_ipv4() {
-    auto self(shared_from_this());
-    async_read(socket, boost::asio::buffer(ipv4, ipv4.size()),
-      [this, self](error_code ec, std::size_t) {
-	if (!ec) {
-	  boost::asio::ip::address_v4::bytes_type end_of_list;
-	  end_of_list.fill(0);
-	  if (ipv4 != end_of_list) {
-	    std::clog << "Read ipv4 address: " << boost::asio::ip::address_v4(ipv4).to_string() << std::endl;
-	    ip_addresses.emplace_back(boost::asio::ip::address_v4(ipv4));
-	    do_read_ipv4();
-	  }
-	  else {
-	    do_read_ipv6();
-	  }
-	} else {
-	  after(ec, ip_addresses);
-	}
-      }
-    );
-  };
-  void do_read_ipv6() {
-    auto self(shared_from_this());
-    async_read(socket, boost::asio::buffer(ipv6, ipv6.size()),
-      [this, self](error_code ec, std::size_t) {
-	if (!ec) {
-	  boost::asio::ip::address_v6::bytes_type end_of_list;
-	  end_of_list.fill(0);
-	  if (ipv6 != end_of_list) {
-	    std::clog << "Read ipv6 address: " << boost::asio::ip::address_v6(ipv6).to_string() << std::endl;
-	    ip_addresses.push_back(boost::asio::ip::address_v6(ipv6));
-	    do_read_ipv6();
-	  } else {
-	    std::clog << "Read all ip addressess" << std::endl;
-	    after(ec, ip_addresses);
-	  }
-	} else {
-	  after(ec, ip_addresses);
-	}
-      }
-    );
-  }
-  
-public:
-  ip_address_list_reader(boost::asio::ip::tcp::socket& socket) : socket(socket) {}
-  void read(after_type after) {
-    this->after = after;
-    do_read_ipv4();
-  }
-};
-
-class services_reader :
-  public std::enable_shared_from_this<services_reader> {
-  
-  typedef std::function<void(boost::system::error_code ec, std::set<service_data>)> after_type;
-  
-  boost::asio::ip::tcp::socket& socket;
-  after_type after;
-  
-  service_data service;
-  
-  std::set<service_data> services;
-  
-  void do_read_flags() {
-    auto self(shared_from_this());
-    async_read(socket, boost::asio::buffer(&service.flags, 1),
-      [this, self](error_code ec, std::size_t) {
-	if (!ec) {
-	  if (service.flags == 0)
-	    after(ec, services);
-	  else
-	    do_read_data();
-	} else {
-	  after(ec, services);
-	}
-      }
-    );
-  }
-  
-  void do_read_data() {
-    auto self(shared_from_this());
-    async_read(socket, service.data_to_buffers(),
-      [this, self](error_code ec, std::size_t) {
-	if (!ec) {
-	  service.id = ntohs(service.id);
-	  service.port = ntohs(service.port);
-	  services.insert(service);
-	  do_read_flags();
-	}
-	else { 
-	  after(ec, services);
-	}
-      }
-    );
-  }
- 
-public:
-  services_reader(boost::asio::ip::tcp::socket& socket) : socket(socket) {}
-  void read(after_type after) {
-    this->after = after;
-    do_read_flags();
-  }
-};
 
 static proto::message registered_id = proto::message::REGISTERED_ID;
 
@@ -164,15 +65,15 @@ void agent_session::handle_register() {
   id = storage.register_agent();
   data = storage.agent(id);
   auto reader = std::make_shared<ip_address_list_reader>(socket);
-  reader->read([this,self](boost::system::error_code ec, std::vector<boost::asio::ip::address> ip_addresses) {
+  reader->read([this,self](error_code ec, std::vector<boost::asio::ip::address> ip_addresses) {
     if (!ec) {
       data->ip_addresses = std::move(ip_addresses);
       std::vector<boost::asio::const_buffer> buffers{
 	  boost::asio::buffer(&registered_id, 1),
 	  boost::asio::buffer(&id, 4)
       };
-      async_write(socket, buffers, [this,self](boost::system::error_code ec, std::size_t) {
-	std::clog << "Sent id" << std::endl;
+      async_write(socket, buffers, [this,self](error_code ec, std::size_t) {
+	log(level::INFO) << "Registered with id: " << id << std::endl;
 	if (!ec)
 	  do_read_requests();
       });
@@ -184,11 +85,11 @@ void agent_session::handle_register() {
 void agent_session::handle_services() {
   auto self(shared_from_this());
   auto reader = std::make_shared<services_reader>(socket);
-  reader->read([this,self](boost::system::error_code ec, std::set<service_data> services) {
+  reader->read([this,self](error_code ec, std::set<service_data> services) {
     if (!ec) {
-      std::clog << "Registered services: " << std::endl;
+      log(level::INFO) << "Registered services: " << std::endl;
       for (auto&& service : services) {
-	std::clog << '\t' << service.id << '@' << service.port << std::endl;
+	log(level::INFO) << '\t' << service.id << '@' << service.port << std::endl;
       }
       if (data)
 	data->services = std::move(services);
@@ -197,109 +98,66 @@ void agent_session::handle_services() {
   });
 }
 
-static const proto::message agent_list = proto::message::AGENT_LIST;
-
-class agent_list_writer :
-  public std::enable_shared_from_this<agent_list_writer> {
-  
-  typedef std::function<void(boost::system::error_code ec)> after_type;
-  
-  
-  
-  boost::asio::ip::tcp::socket& socket;
-  agent_storage& storage;
-  after_type after;
-  
-  uint32_t last_id;
-  std::vector<boost::asio::const_buffer> buffers;
-  std::vector<boost::asio::ip::address_v4::bytes_type> ipv4;
-  std::vector<boost::asio::ip::address_v6::bytes_type> ipv6;
-  
-  void do_write_first() {
-    buffers.push_back(boost::asio::buffer(&agent_list, 1));
-    auto it = storage.agents().begin();
-    if (it != storage.agents().end()) {
-      last_id = it->first;
-      do_write_agent(it->second);
-    } else  {
-      do_write_end_of_list();
-    } 
-  }
-  
-  void do_write_next() {
-    buffers.clear();
-    auto it = storage.agents().upper_bound(last_id);
-    if (it != storage.agents().end()) {
-      last_id = it->first;
-      do_write_agent(it->second);
-    } else  {
-      do_write_end_of_list();
-    }
-  }
-  
-  void do_write_agent(std::shared_ptr<agent_data> data) {
-    auto self(shared_from_this());
-    ipv4.clear();
-    ipv6.clear();
-    for (auto&& addr : data->ip_addresses) {
-      if (addr.is_v4())
-	ipv4.push_back(addr.to_v4().to_bytes());
-      else if (addr.is_v6())
-	ipv6.push_back(addr.to_v6().to_bytes());
-    }
-    boost::asio::ip::address_v4::bytes_type end_of_ipv4;
-    end_of_ipv4.fill(0);
-    ipv4.push_back(end_of_ipv4);
-    boost::asio::ip::address_v6::bytes_type end_of_ipv6;
-    end_of_ipv6.fill(0);
-    ipv6.push_back(end_of_ipv6);
-    
-    buffers.push_back(boost::asio::buffer(&last_id, 4));
-    for (auto& data : ipv4)
-      buffers.push_back(boost::asio::buffer(data, data.size()));
-    for (auto& data : ipv6)
-      buffers.push_back(boost::asio::buffer(data, data.size()));
-    async_write(socket, buffers, [this,self](boost::system::error_code ec, std::size_t) {
-      if (!ec)
-	do_write_next();
-      else
-	after(ec);
-    });
-  }
-  
-  void do_write_end_of_list() {
-    auto self(shared_from_this());
-    last_id = 0;
-    buffers.push_back(boost::asio::buffer(&last_id, 4));
-    async_write(socket, buffers, [this,self](boost::system::error_code ec, std::size_t) {
-      after(ec);
-    });
-  }  
-  
-public:
-  agent_list_writer(boost::asio::ip::tcp::socket& socket, agent_storage& storage) :
-    socket(socket), storage(storage) {}
-  void write(after_type after) {
-    this->after = after;
-    do_write_first();
-  }
-};
-
-
 void agent_session::handle_list_agents() {
   auto self(shared_from_this());
   auto writer = std::make_shared<agent_list_writer>(socket, storage);
-  writer->write([this,self](boost::system::error_code ec) {
+  writer->write([this,self](error_code ec) {
+    log(level::DEBUG) << "Listing agents. " << std::endl;
     if(!ec)
       do_read_requests();
   });
 }
 
 void agent_session::handle_list_services() {
-  //FIXME
+  auto self(shared_from_this());
+  auto agent_reader = std::make_shared<agent_ids_reader>(socket);
+  agent_reader->read([this,self](error_code ec, std::vector<uint32_t> ids) {
+    if (ec)
+      return;
+    
+    auto agent_ids_ptr = std::make_shared<std::vector<uint32_t>>(std::move(ids));
+    auto service_reader = std::make_shared<service_ids_reader>(socket);
+    service_reader->read([this,self,agent_ids_ptr](error_code ec, std::vector<uint16_t> services) {
+      if (ec)
+	return;
+      
+      auto service_ids_ptr = std::make_shared<std::vector<uint16_t>>(std::move(services));
+      
+      if (agent_ids_ptr->empty()) {
+	if (service_ids_ptr->empty()) {
+	  log(level::DEBUG) << "Listing all services." << std::endl;
+	} else {
+	  log(level::DEBUG) << "Listing services of all agents with ids:" << std::endl;
+	  for (uint16_t id : *service_ids_ptr)
+	    log(level::DEBUG) << '\t' << id << std::endl;
+	}
+      } else {
+	if (service_ids_ptr->empty()) {
+	  log(level::DEBUG) << "Listing all services of:" << std::endl;
+	  for (uint32_t id : *agent_ids_ptr)
+	    log(level::DEBUG) << '\t' << id << std::endl;
+	} else {
+	  log(level::DEBUG) << "Listing services" << std::endl;
+	  log(level::DEBUG) << "\tof" << std::endl;
+	  for (uint32_t id : *agent_ids_ptr)
+	    log(level::DEBUG) << "\t\t" << id << std::endl;
+	  log(level::DEBUG) << "\twith ids:" << std::endl;
+	  for (uint16_t id : *service_ids_ptr)
+	    log(level::DEBUG) << "\t\t" << id << std::endl;
+	}
+      }
+      
+      auto writer = std::make_shared<service_list_writer>(socket, storage, agent_ids_ptr, service_ids_ptr);
+      writer->write([this, self](error_code ec) {
+	if (!ec)
+	  do_read_requests();
+      });
+    });
+  });
 }
 
 void agent_session::run() {
+  log(level::TRACE) << "Started." << std::endl;
   do_read_requests();
 }
 
