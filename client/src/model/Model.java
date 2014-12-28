@@ -4,27 +4,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Model {
-	private List<String> agentsList;
-	private List<String> servicesList;
+	private List<Agent> agentsList;
+	private List<Service> servicesList;
 	
 	public Model() {
-		agentsList = new ArrayList<String>();
-		servicesList = new ArrayList<String>();
+		agentsList = new ArrayList<Agent>();
+		servicesList = new ArrayList<Service>();
 	}
 	
-	public List<String> getAgentsList() {
+	public List<Agent> getAgentsList() {
 		return agentsList;
 	}
 	
-	public List<String> getServicesList() {
+	public List<Service> getServicesList() {
 		return servicesList;
 	}
 	
-	public void setAgentsList(List<String> agentsList) {
+	public void setAgentsList(List<Agent> agentsList) {
 		this.agentsList = agentsList;
 	}
 	
-	public void setServicesList(List<String> servicesList) {
+	public void setServicesList(List<Service> servicesList) {
 		this.servicesList = servicesList;
 	}
 }
