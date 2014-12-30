@@ -3,6 +3,9 @@ package common;
 public enum CommandType {
 	LIST_AGENTS("list agents", (byte)0x03),
 	LIST_SERVICES("list services", (byte)0x04),
+	SERVICES("services", (byte)0x02),
+	REGISTER("register", (byte)0x01),
+	CONN_REQUEST("conn request", (byte)0x05),
 	DISCONNECT("disconnect"),
 	CONNECT("connect");
 	
