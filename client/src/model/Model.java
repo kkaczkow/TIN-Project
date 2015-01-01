@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Model {
+	private int ID;
 	private List<Agent> agentsList;
 	private List<Service> servicesList;
 	
@@ -27,4 +28,8 @@ public class Model {
 	public void setServicesList(List<Service> servicesList) {
 		this.servicesList = servicesList;
 	}
+	
+	
+	
+	
 }

@@ -7,7 +7,10 @@ public enum CommandType {
 	REGISTER("register", (byte)0x01),
 	CONN_REQUEST("conn request", (byte)0x05),
 	DISCONNECT("disconnect"),
-	CONNECT("connect");
+	CONNECT("connect"),
+	AGENT_LIST("agent list", (byte)0x83),
+	RGISTERED_ID("registered id", (byte)0x81),
+	SERVICES_LIST("services list", (byte)0x84);
 	
 	private String command;
 	private byte byteToSend;
@@ -21,7 +24,7 @@ public enum CommandType {
 		this.command = command;
 	}
 	
-	public  byte getByteToSend () {
+	public byte getByteToSend () {
 		return byteToSend;
 	}
 	public static CommandType fromString(String command) {

@@ -1,14 +1,36 @@
 package controller;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
+import model.Agent;
+import model.ClientMessageParser;
 import model.Model;
+import model.Service;
+import model.messages.ClientMessage;
+import model.messages.ListAgentMessage;
+import model.messages.ListServicesMessage;
+import model.messages.RegisterMessage;
+import model.messages.ServicesMessage;
 import view.View;
 import common.CommandType;
 import common.events.ClientEvent;
+import common.events.ConnectEvent;
+import common.events.DisconnectEvent;
+import common.events.ListAgentsEvent;
+import common.events.ListServicesEvent;
+import common.events.RegisterEvent;
+import common.events.ServicesEvent;
 
 public class Controller {
 	
+	private static Map<Class<? extends ClientEvent>, EventHandler> mMapper;
 	private static Connector mConnector;
 	private static Model mModel;
 	private static View mView;
@@ -20,14 +42,15 @@ public class Controller {
 		mConnector = new Connector();
 		Controller.mModel = mModel;
 		Controller.mBlockingQueue = mBlockingQueue;
+		setup();
 	}
 	
-	
-	public Controller(Model mModel, View mWiew, BlockingQueue <ClientEvent> mBlockingQueue) {
+	public Controller(Model mModel, View mView, BlockingQueue <ClientEvent> mBlockingQueue) {
 		Controller.mConnector = new Connector();
 		Controller.mView = mView;
 		Controller.mModel = mModel;
 		Controller.mBlockingQueue = mBlockingQueue;
+		setup();
 	}
 	
 	/**
@@ -36,6 +59,73 @@ public class Controller {
 	public Controller(BlockingQueue <ClientEvent> mBlockingQueue) {
 		Controller.mConnector = new Connector();
 		Controller.mBlockingQueue = mBlockingQueue;
+		setup();
+	}
+	
+	private void setup() {
+		mMapper.put(ConnectEvent.class, new EventHandler() {
+			@Override
+			public void handle(ClientEvent event) {
+				mConnector.connect(serverName, port);
+			}
+		});
+		
+		mMapper.put(DisconnectEvent.class, new EventHandler() {
+			
+			@Override
+			public void handle(ClientEvent event) {
+				mConnector.disconnect();	
+			}
+		});
+		
+		mMapper.put(RegisterEvent.class, new EventHandler() {
+
+			@Override
+			public void handle(ClientEvent event) {
+				RegisterEvent e = (RegisterEvent)event;
+
+				try {
+					List<Inet4Address> ipv4 = ClientMessageParser.parserIPv4(e.getIpV4());
+					List<Inet6Address> ipv6 = ClientMessageParser.parserIPv6(e.getIpV6());
+					ClientMessage msg = new RegisterMessage(ipv4, ipv6);
+				} 
+				catch (UnknownHostException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
+		
+		mMapper.put(ServicesEvent.class, new EventHandler() {
+			
+			@Override
+			public void handle(ClientEvent event) {
+				ServicesEvent e= (ServicesEvent) event;
+				List<Service> serv= ClientMessageParser.parserServices(e.getServicesList());
+				ClientMessage msg= new ServicesMessage(serv);
+			}
+		});
+		
+		mMapper.put(ListAgentsEvent.class, new EventHandler() {
+			
+			@Override
+			public void handle(ClientEvent event) {
+				ListAgentsEvent e= (ListAgentsEvent) event;
+				ListAgentMessage msg= new ListAgentMessage();
+				
+			}
+		});
+		
+		mMapper.put(ListServicesEvent.class, new EventHandler() {
+			
+			@Override
+			public void handle(ClientEvent event) {
+				ListServicesEvent e= (ListServicesEvent) event;
+				List<Agent> ag= mModel.getAgentsList();
+				List<Service> serv= ClientMessageParser.parserServices(e.getServicesList());
+				ListServicesMessage msg= new ListServicesMessage(ag, serv);
+			}
+		});
 	}
 	
 	public void go() {
@@ -52,37 +142,10 @@ public class Controller {
 		System.out.println("Client: processEvents()");
 		try {
 			ClientEvent event = mBlockingQueue.take();
-			
-			switch(event.getCommand()) {
-			case LIST_AGENTS:
-				System.out.println("list agents");
-				System.out.println(CommandType.LIST_AGENTS.getByteToSend());
-				mConnector.sendData(CommandType.LIST_AGENTS.getByteToSend());
-				mConnector.getData();
-				break;
-				
-			case LIST_SERVICES:
-				System.out.println("list services");
-				System.out.println(CommandType.LIST_SERVICES.getByteToSend());
-				mConnector.sendData(CommandType.LIST_SERVICES.getByteToSend());
-				mConnector.getData();
-				break;	
-				
-			case CONNECT:
-				System.out.println("Client: CONNECT");
-				mConnector.connect(serverName, port);
-				System.out.println("connect");
-				break;
-				
-			case DISCONNECT:
-				mConnector.disconnect();
-				System.out.println("disconnect");
-				break;
-			
-			default:
-				throw new RuntimeException("unknow command");
-			}
-			
+			if (mMapper.containsKey(event.getClass()))
+				mMapper.get(event.getClass()).handle(event);
+			else
+				; // FIXME unhandled error
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

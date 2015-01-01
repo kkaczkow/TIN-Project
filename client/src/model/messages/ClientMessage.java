@@ -1,13 +1,13 @@
 package model.messages;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 public abstract class ClientMessage {
-	protected byte type;
+	protected final byte type;
 	
-	public byte getType() {
-		return this.type;
+	ClientMessage(final byte type) {
+		this.type = type;
 	}
-	
-	public void setType(byte type) {
-		this.type= type;
-	}
+	public abstract void send(OutputStream ostream) throws IOException;
 }
