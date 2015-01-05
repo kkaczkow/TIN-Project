@@ -1,11 +1,13 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import model.Agent;
 import model.Model;
 import common.CommandType;
 import common.events.*;
 import controller.Controller;
-
 import view.View;
 
 
@@ -51,7 +53,8 @@ public final class Client {
 			break;
 			
 		case LIST_SERVICES:
-			mBlockingQueue.add(new ListServicesEvent());
+			//TODO spr. czy new ArrayList<Agent>() jest ok
+			mBlockingQueue.add(new ListServicesEvent(new ArrayList<Agent>(), new String()));
 			break;
 			
 		case CONNECT:

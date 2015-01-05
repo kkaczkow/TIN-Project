@@ -26,6 +26,7 @@ public class ConnRequestMessage extends ClientMessage {
 		dostream.writeByte(flags);
 		dostream.writeInt(agentID);
 		dostream.writeShort(port);
+		dostream.close();
 	}
 
 }

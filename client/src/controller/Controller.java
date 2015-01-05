@@ -1,5 +1,6 @@
 package controller;
 
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -20,13 +21,17 @@ import model.messages.RegisterMessage;
 import model.messages.ServicesMessage;
 import view.View;
 import common.CommandType;
+import common.events.AgentListEvent;
 import common.events.ClientEvent;
+import common.events.ConnRequestEvent;
 import common.events.ConnectEvent;
 import common.events.DisconnectEvent;
 import common.events.ListAgentsEvent;
 import common.events.ListServicesEvent;
 import common.events.RegisterEvent;
+import common.events.RegisteredIdEvent;
 import common.events.ServicesEvent;
+import common.events.ServicesListEvent;
 
 public class Controller {
 	
@@ -88,8 +93,12 @@ public class Controller {
 					List<Inet4Address> ipv4 = ClientMessageParser.parserIPv4(e.getIpV4());
 					List<Inet6Address> ipv6 = ClientMessageParser.parserIPv6(e.getIpV6());
 					ClientMessage msg = new RegisterMessage(ipv4, ipv6);
+					msg.send(mConnector.getSocket().getOutputStream());
 				} 
 				catch (UnknownHostException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
@@ -103,6 +112,12 @@ public class Controller {
 				ServicesEvent e= (ServicesEvent) event;
 				List<Service> serv= ClientMessageParser.parserServices(e.getServicesList());
 				ClientMessage msg= new ServicesMessage(serv);
+				try {
+					msg.send(mConnector.getSocket().getOutputStream());
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 			}
 		});
 		
@@ -112,7 +127,12 @@ public class Controller {
 			public void handle(ClientEvent event) {
 				ListAgentsEvent e= (ListAgentsEvent) event;
 				ListAgentMessage msg= new ListAgentMessage();
-				
+				try {
+					msg.send(mConnector.getSocket().getOutputStream());
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 			}
 		});
 		
@@ -124,6 +144,48 @@ public class Controller {
 				List<Agent> ag= mModel.getAgentsList();
 				List<Service> serv= ClientMessageParser.parserServices(e.getServicesList());
 				ListServicesMessage msg= new ListServicesMessage(ag, serv);
+				try {
+					msg.send(mConnector.getSocket().getOutputStream());
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
+		
+		mMapper.put(ConnRequestEvent.class, new EventHandler() {
+			
+			@Override
+			public void handle(ClientEvent event) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		
+		mMapper.put(AgentListEvent.class, new EventHandler() {
+			
+			@Override
+			public void handle(ClientEvent event) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		
+		mMapper.put(ServicesListEvent.class, new EventHandler() {
+			
+			@Override
+			public void handle(ClientEvent event) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		
+		mMapper.put(RegisteredIdEvent.class, new EventHandler() {
+			
+			@Override
+			public void handle(ClientEvent event) {
+				// TODO Auto-generated method stub
+				
 			}
 		});
 	}

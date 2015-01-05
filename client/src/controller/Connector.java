@@ -16,6 +16,10 @@ public class Connector {
 		isServerConnected = false;
 	}
 	
+	public Socket getSocket() {
+		return mClient;
+	}
+	
 	public void connect(final String serverName, final int portNumber) {
 		
 	    try {
