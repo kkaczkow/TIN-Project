@@ -100,16 +100,17 @@ public class Dialog extends JFrame {
         mListServicesBtn.setToolTipText("Send request to the server for services list");
         mListServicesBtn.addActionListener(new ActionListener() { 
         	  public void actionPerformed(ActionEvent e) { 
-        		  mBlockingQueue.add(new ListServicesEvent());
+        		  //TODO add arg to ListServicesEvent constr
+        		  //mBlockingQueue.add(new ListServicesEvent());
         }});
         
         mServicesBtn = new JButton("Send my services");
         mServicesBtn.setToolTipText("Send my services to the server");
         mServicesBtn.addActionListener(new ActionListener() { 
         	  public void actionPerformed(ActionEvent e) { 
-        		  String ipv4 = ipv4TextBox.getText();
-        		  String ipv6 = ipv6TextBox.getText();
-        		  mBlockingQueue.add(new ServicesEvent(ipv4, ipv6));
+        		  String ips = ipv4TextBox.getText();
+        		  ips.concat(" " + ipv6TextBox.getText());
+        		  mBlockingQueue.add(new ServicesEvent(ips));
         }});
         
         mRegisterBtn = new JButton("Register");
@@ -125,7 +126,8 @@ public class Dialog extends JFrame {
         mConnRequestBtn.setToolTipText("Connection with another client behind NAT");
         mConnRequestBtn.addActionListener(new ActionListener() { 
         	  public void actionPerformed(ActionEvent e) { 
-        		  mBlockingQueue.add(new ListServicesEvent());
+        		  //TODO Add ConnRequestEvent constr.
+        		  //mBlockingQueue.add(new ListServicesEvent());
         }});
     }
     

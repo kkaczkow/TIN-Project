@@ -6,6 +6,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -44,13 +45,15 @@ public class Controller {
 	private static BlockingQueue <ClientEvent> mBlockingQueue;
 	
 	public Controller(Model mModel, BlockingQueue <ClientEvent> mBlockingQueue) {
-		mConnector = new Connector();
+		Controller.mMapper= new HashMap<Class<? extends ClientEvent>, EventHandler>();
+		Controller.mConnector = new Connector();
 		Controller.mModel = mModel;
 		Controller.mBlockingQueue = mBlockingQueue;
 		setup();
 	}
 	
 	public Controller(Model mModel, View mView, BlockingQueue <ClientEvent> mBlockingQueue) {
+		Controller.mMapper= new HashMap<Class<? extends ClientEvent>, EventHandler>();
 		Controller.mConnector = new Connector();
 		Controller.mView = mView;
 		Controller.mModel = mModel;

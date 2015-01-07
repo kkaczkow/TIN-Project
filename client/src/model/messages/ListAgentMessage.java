@@ -16,7 +16,7 @@ public class ListAgentMessage extends ClientMessage {
 	public void send(OutputStream ostream) throws IOException {
 		DataOutputStream dostream = new DataOutputStream(ostream);
 		dostream.writeByte(type);
-		dostream.close();
+		dostream.flush();
 	}
 
 }

@@ -27,6 +27,6 @@ public class ServicesMessage extends ClientMessage {
 			dostream.writeShort(service.getPort());
 		}
 		dostream.writeByte(0);
-		dostream.close();
+		dostream.flush();
 	}
 }

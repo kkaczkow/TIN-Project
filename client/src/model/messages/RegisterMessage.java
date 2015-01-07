@@ -29,6 +29,6 @@ public class RegisterMessage extends ClientMessage {
 		for (Inet6Address ipv6 : IPv6)
 			dostream.write(ipv6.getAddress());
 		dostream.write(new byte[16]);
-		dostream.close();
+		dostream.flush();
 	}
 }

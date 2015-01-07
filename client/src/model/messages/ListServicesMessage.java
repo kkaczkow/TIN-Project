@@ -33,7 +33,7 @@ public class ListServicesMessage extends ClientMessage {
 			dostream.writeShort(service.getId());
 		}
 		dostream.writeByte(0);
-		dostream.close();
+		dostream.flush();
 	}
 
 }
