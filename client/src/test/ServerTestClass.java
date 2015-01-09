@@ -7,15 +7,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 
-public class ServerTestClass extends Thread {
+/**
+ * A dummy server class
+ *
+ */
+public class ServerTestClass{
 
 	private ServerSocket serverSocket;
 	private Socket server;
-	private static int port = 6066;
 	private boolean isClientConnected;
 	private static int serverConnectionCounter;
 
-	public ServerTestClass() {
+	public ServerTestClass(final int port) {
 		try {
 			isClientConnected = false;
 			serverSocket = new ServerSocket(port);
@@ -26,14 +29,28 @@ public class ServerTestClass extends Thread {
 		}
 	}
 
-	public void run() {
+	public void runConnectionTest() {
 		while (true && serverConnectionCounter == 0) {
 			++serverConnectionCounter;
 			connect();
-			/*
-			 * read();
-			 * write();
-			 */
+			disconnect();
+		}
+	}
+	
+	public void runReadTest() {
+		while (true && serverConnectionCounter == 0) {
+			++serverConnectionCounter;
+			connect();
+			read();
+			disconnect();
+		}
+	}
+	
+	public void runWriteTest(final String message) {
+		while (true && serverConnectionCounter == 0) {
+			++serverConnectionCounter;
+			connect();
+			write(message);
 			disconnect();
 		}
 	}
@@ -47,7 +64,7 @@ public class ServerTestClass extends Thread {
 			e.printStackTrace();
 		}
 		System.out.println("Server: Just connected to "
-				+ server.getRemoteSocketAddress());
+				+ server.getLocalSocketAddress());
 		isClientConnected = true;
 	}
 	
@@ -61,7 +78,7 @@ public class ServerTestClass extends Thread {
 		}
 	}
 	
-	private void write() {
+	private void write(final String message) {
 		try {
 			DataOutputStream out = new DataOutputStream(server.getOutputStream());
 			out.writeUTF("Thank you for connecting to " + server.getLocalSocketAddress() + "\nGoodbye!");
@@ -74,6 +91,7 @@ public class ServerTestClass extends Thread {
 	private void disconnect() {
 		try {
 			server.close();
+			serverSocket.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

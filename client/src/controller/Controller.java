@@ -3,13 +3,14 @@ package controller;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 
 import model.Agent;
 import model.ClientMessageParser;
@@ -21,7 +22,6 @@ import model.messages.ListServicesMessage;
 import model.messages.RegisterMessage;
 import model.messages.ServicesMessage;
 import view.View;
-import common.CommandType;
 import common.events.AgentListEvent;
 import common.events.ClientEvent;
 import common.events.ConnRequestEvent;
@@ -43,12 +43,14 @@ public class Controller {
 	private static String serverName ="localhost";
 	private static int port = 6066;
 	private static BlockingQueue <ClientEvent> mBlockingQueue;
+	private static final Logger LOGGER = Logger.getLogger(Controller.class);
 	
 	public Controller(Model mModel, BlockingQueue <ClientEvent> mBlockingQueue) {
 		Controller.mMapper= new HashMap<Class<? extends ClientEvent>, EventHandler>();
 		Controller.mConnector = new Connector();
 		Controller.mModel = mModel;
 		Controller.mBlockingQueue = mBlockingQueue;
+		BasicConfigurator.configure();
 		setup();
 	}
 	
@@ -67,12 +69,13 @@ public class Controller {
 	public Controller(BlockingQueue <ClientEvent> mBlockingQueue) {
 		Controller.mConnector = new Connector();
 		Controller.mBlockingQueue = mBlockingQueue;
+		Controller.mMapper= new HashMap<Class<? extends ClientEvent>, EventHandler>();
 		setup();
 	}
 	
 	private void setup() {
 		mMapper.put(ConnectEvent.class, new EventHandler() {
-			@Override
+			//@Override
 			public void handle(ClientEvent event) {
 				mConnector.connect(serverName, port);
 			}
@@ -80,7 +83,7 @@ public class Controller {
 		
 		mMapper.put(DisconnectEvent.class, new EventHandler() {
 			
-			@Override
+			//@Override
 			public void handle(ClientEvent event) {
 				mConnector.disconnect();	
 			}
@@ -88,7 +91,7 @@ public class Controller {
 		
 		mMapper.put(RegisterEvent.class, new EventHandler() {
 
-			@Override
+			//@Override
 			public void handle(ClientEvent event) {
 				RegisterEvent e = (RegisterEvent)event;
 
@@ -98,50 +101,46 @@ public class Controller {
 					ClientMessage msg = new RegisterMessage(ipv4, ipv6);
 					msg.send(mConnector.getSocket().getOutputStream());
 				} 
-				catch (UnknownHostException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+				catch (UnknownHostException ex) {
+					LOGGER.error(ex);
+				} catch (IOException ex) {
+					LOGGER.error(ex);
 				}
 			}
 		});
 		
 		mMapper.put(ServicesEvent.class, new EventHandler() {
 			
-			@Override
+			//@Override
 			public void handle(ClientEvent event) {
 				ServicesEvent e= (ServicesEvent) event;
 				List<Service> serv= ClientMessageParser.parserServices(e.getServicesList());
 				ClientMessage msg= new ServicesMessage(serv);
 				try {
 					msg.send(mConnector.getSocket().getOutputStream());
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+				} catch (IOException ex) {
+					LOGGER.error(ex);
 				}
 			}
 		});
 		
 		mMapper.put(ListAgentsEvent.class, new EventHandler() {
 			
-			@Override
+			//@Override
 			public void handle(ClientEvent event) {
 				ListAgentsEvent e= (ListAgentsEvent) event;
 				ListAgentMessage msg= new ListAgentMessage();
 				try {
 					msg.send(mConnector.getSocket().getOutputStream());
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+				} catch (IOException ex) {
+					LOGGER.error(ex);
 				}
 			}
 		});
 		
 		mMapper.put(ListServicesEvent.class, new EventHandler() {
 			
-			@Override
+			//@Override
 			public void handle(ClientEvent event) {
 				ListServicesEvent e= (ListServicesEvent) event;
 				List<Agent> ag= mModel.getAgentsList();
@@ -149,16 +148,15 @@ public class Controller {
 				ListServicesMessage msg= new ListServicesMessage(ag, serv);
 				try {
 					msg.send(mConnector.getSocket().getOutputStream());
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+				} catch (IOException ex) {
+					LOGGER.error(ex);
 				}
 			}
 		});
 		
 		mMapper.put(ConnRequestEvent.class, new EventHandler() {
 			
-			@Override
+			//@Override
 			public void handle(ClientEvent event) {
 				// TODO Auto-generated method stub
 				
@@ -167,7 +165,7 @@ public class Controller {
 		
 		mMapper.put(AgentListEvent.class, new EventHandler() {
 			
-			@Override
+			//@Override
 			public void handle(ClientEvent event) {
 				// TODO Auto-generated method stub
 				
@@ -176,7 +174,7 @@ public class Controller {
 		
 		mMapper.put(ServicesListEvent.class, new EventHandler() {
 			
-			@Override
+			//@Override
 			public void handle(ClientEvent event) {
 				// TODO Auto-generated method stub
 				
@@ -185,7 +183,7 @@ public class Controller {
 		
 		mMapper.put(RegisteredIdEvent.class, new EventHandler() {
 			
-			@Override
+			//@Override
 			public void handle(ClientEvent event) {
 				// TODO Auto-generated method stub
 				
@@ -194,9 +192,7 @@ public class Controller {
 	}
 	
 	public void go() {
-		System.out.println("Client: go()");
-        //Thread thread = new Thread();
-        //thread.start();
+		LOGGER.info("Controller: go()");
         while(true) {
             processEvents();
         }
@@ -204,7 +200,7 @@ public class Controller {
 	
 	
 	public static void processEvents() {
-		System.out.println("Client: processEvents()");
+		LOGGER.info("Controller: processEvents()");
 		try {
 			ClientEvent event = mBlockingQueue.take();
 			if (mMapper.containsKey(event.getClass()))
@@ -212,7 +208,7 @@ public class Controller {
 			else
 				; // FIXME unhandled error
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			LOGGER.error(e);
 		}
 	}
 	
@@ -222,6 +218,10 @@ public class Controller {
 	 */
 	public boolean isServerConnected() {
 		return mConnector.isServerConnected();
+	}
+	
+	public void setPortNumber(final int port) {
+		this.port = port;
 	}
 
 }

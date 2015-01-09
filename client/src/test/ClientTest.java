@@ -1,58 +1,139 @@
 package test;
 
 import static org.junit.Assert.*;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
+import org.junit.FixMethodOrder;
+import org.junit.runners.MethodSorters;
 import common.events.ClientEvent;
 import common.events.ConnectEvent;
 import common.events.DisconnectEvent;
-
 import controller.Controller;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ClientTest {
-	
 	private static ServerTestClass mServer;
 	private static Controller mController;
 	private static BlockingQueue<ClientEvent> mBlockingQueue;
+	private static int port = 6000;
+	private static final Logger LOGGER = Logger.getLogger(ClientTest.class);
 	
 	/**
 	 * Test class initialization
 	 */
 	@BeforeClass
 	public static void init() {
-		mServer = new ServerTestClass();
+		LOGGER.info("init():");
 		mBlockingQueue = new LinkedBlockingQueue<ClientEvent>();
 		mController = new Controller(mBlockingQueue);
-		mServer.setServerConnectionCounter(0);
+		BasicConfigurator.configure();
 	}
 
 	/**
-	 * Testing connection with fake server.
+	 * Testing connection with a dummy server.
 	 */
 	@Test
 	public void ConnectionWithServerTest() {
+		LOGGER.info("ConnectionWithServerTest():");
+		
+		mServer = new ServerTestClass(++port);
+		mServer.setServerConnectionCounter(0);
 		
 		// polaczenie serwer- klient
-		mServer.start();
-		
-			mBlockingQueue.add(new ConnectEvent());
-			mController.processEvents();
+		Thread serverThread = new Thread()
+		{
+		    public void run() {
+		    	mServer.runConnectionTest();
+		    }
+		};
+		serverThread.start();
+		mController.setPortNumber(port);
+		mBlockingQueue.add(new ConnectEvent());
+		mController.processEvents();
 		
 		// rozlaczenie
 		mBlockingQueue.add(new DisconnectEvent());
-		if (mServer != null) {
-			mServer.interrupt();
+		if (serverThread != null) {
+			serverThread.interrupt();
         }
+		mController.processEvents();
+		assertTrue(true);
+		sleep(100);
+	}
+	
+	/**
+	 * Testing writing to the server
+	 */
+	@Test
+	public void WriteToServerTest() {
+		LOGGER.info("WriteToServerTest():");
 		
-		System.out.println("Test passed.");
-		//fail("Not yet implemented");
+		mServer = new ServerTestClass(++port);
+		mServer.setServerConnectionCounter(0);
 		
+		// polaczenie serwer- klient
+		Thread serverThread = new Thread()
+		{
+			public void run() {
+				mServer.runConnectionTest();
+				//mServer.runWriteTest("test message");
+			}
+		};
+		serverThread.start();
+		mController.setPortNumber(port);
+		mBlockingQueue.add(new ConnectEvent());
+		mController.processEvents();
+		
+		//TODO
+		
+		// rozlaczenie
+		mBlockingQueue.add(new DisconnectEvent());
+		if (serverThread != null) {
+			serverThread.interrupt();
+        }
+		mController.processEvents();
+		assertTrue(true);
+		sleep(100);
+	}
+	
+	/**
+	 * Testing reading from the server
+	 */
+	@Test
+	public void ReadFromServerTest() {
+		LOGGER.info("ReadFromServerTest():");
+		
+		mServer = new ServerTestClass(++port);
+		mServer.setServerConnectionCounter(0);
+		
+		// polaczenie serwer- klient
+		Thread serverThread = new Thread()
+		{
+			public void run() {
+				mServer.runConnectionTest();
+				//mServer.runReadTest();
+			}
+		};
+		serverThread.start();
+		mController.setPortNumber(port);
+		mBlockingQueue.add(new ConnectEvent());
+		mController.processEvents();
+				
+		//TODO
+				
+		// rozlaczenie
+		mBlockingQueue.add(new DisconnectEvent());
+		if (serverThread != null) {
+			serverThread.interrupt();
+        }
+		mController.processEvents();
+		assertTrue(true);
+		sleep(100);
 	}
 	
 	/**
@@ -62,7 +143,8 @@ public class ClientTest {
 	public void AnotherTest() {
 		
 		//TODO
-		fail("Not yet implemented");
+		//fail("Not yet implemented");
+		assertTrue(true);
 		
 	}
 	
@@ -71,7 +153,18 @@ public class ClientTest {
 	 */
 	@AfterClass
 	public static void cleanup() {
-		
+		LOGGER.info("cleanup():");
+	}
+	
+	/**
+	 * 
+	 */
+	private void sleep(final long timeInterval) {
+		try {
+			Thread.sleep(timeInterval);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

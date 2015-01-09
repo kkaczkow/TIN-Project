@@ -7,13 +7,18 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
+
 public class Connector {
 
 	private Socket mClient;
 	private boolean isServerConnected;
+	private static final Logger LOGGER = Logger.getLogger(Controller.class);
 	
 	public Connector() {
 		isServerConnected = false;
+		BasicConfigurator.configure();
 	}
 	
 	public Socket getSocket() {
@@ -23,14 +28,14 @@ public class Connector {
 	public void connect(final String serverName, final int portNumber) {
 		
 	    try {
-	    	System.out.println("Client: Connecting to " + serverName + " on port " + portNumber);
+	    	LOGGER.info("Client: Connecting to " + serverName + " on port " + portNumber);
 	    	mClient = new Socket(serverName, portNumber);
 	    	isServerConnected = true;
 	    }
 	    catch (IOException e) {
-	        System.out.println(e);
+	        LOGGER.error(e);
 	    }
-	    System.out.println("Just connected to " + mClient.getRemoteSocketAddress());
+	    LOGGER.info("Client: Just connected to " + mClient.getRemoteSocketAddress());
 
 	}
 	
@@ -40,10 +45,8 @@ public class Connector {
 	public void getData() {
 		try {
 			InputStream inFromServer = mClient.getInputStream();
-	         DataInputStream in =
-	                        new DataInputStream(inFromServer);
-	         
-	         System.out.println("Server says " + in.readUTF());
+	         DataInputStream in =  new DataInputStream(inFromServer);
+	         LOGGER.info("Server says " + in.readUTF());
 			in.close();
 		} catch(NullPointerException e) {
 			e.printStackTrace();
@@ -73,11 +76,11 @@ public class Connector {
 	
 	public void disconnect() {
 		try {
-			System.out.println("Client: Close()");
+			LOGGER.info("Client: Close()");
 	        mClient.close();
 	    } 
 	    catch (IOException e) {
-	       System.out.println(e);
+	    	LOGGER.error(e);
 	    }
 	}
 	
