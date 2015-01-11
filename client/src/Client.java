@@ -14,6 +14,9 @@ import view.View;
 public final class Client {
 	
 	private static BlockingQueue<ClientEvent> mBlockingQueue = new LinkedBlockingQueue<ClientEvent>();
+	private static Controller mController;
+	private static View mView;
+	private static Model mModel;
 	
 	/**
 	 * 
@@ -21,8 +24,7 @@ public final class Client {
 	 */
 	public static void main(String[] args) {
 		
-		Controller controller;
-		Model model = new Model();
+		mModel = new Model();
 		
 		// start from commandline
 		if(args != null && args.length > 0) {
@@ -32,15 +34,15 @@ public final class Client {
 			{
 				command += elem;
 			}
-			controller = new Controller(model, mBlockingQueue);
+			mController = new Controller(mModel, mBlockingQueue);
 			handleCommand(command);
 			
 		// start with gui
 		} else {
-			View view = new View(mBlockingQueue);
-			controller = new Controller(model, view, mBlockingQueue);
+			mView = new View(mBlockingQueue);
+			mController = new Controller(mModel, mView, mBlockingQueue);
 		}
-		controller.go();
+		mController.go();
 
 	}
 	
