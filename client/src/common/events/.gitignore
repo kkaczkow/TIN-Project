@@ -1,0 +1,11 @@
+/AgentListEvent.class
+/ClientEvent.class
+/ConnRequestEvent.class
+/ConnectEvent.class
+/DisconnectEvent.class
+/ListAgentsEvent.class
+/ListServicesEvent.class
+/RegisterEvent.class
+/RegisteredIdEvent.class
+/ServicesEvent.class
+/ServicesListEvent.class

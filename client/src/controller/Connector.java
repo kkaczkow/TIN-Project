@@ -26,17 +26,20 @@ public class Connector {
 	}
 	
 	public void connect(final String serverName, final int portNumber) {
-		
+		if (mClient != null)
+		{
+			/* we're connected, disconnect before connecting again */
+			disconnect();
+		}
 	    try {
 	    	LOGGER.info("Client: Connecting to " + serverName + " on port " + portNumber);
 	    	mClient = new Socket(serverName, portNumber);
 	    	isServerConnected = true;
+		    LOGGER.info("Client: Just connected to " + mClient.getRemoteSocketAddress());
 	    }
 	    catch (IOException e) {
 	        LOGGER.error(e);
 	    }
-	    LOGGER.info("Client: Just connected to " + mClient.getRemoteSocketAddress());
-
 	}
 	
 	/**
@@ -78,6 +81,7 @@ public class Connector {
 		try {
 			LOGGER.info("Client: Close()");
 	        mClient.close();
+	        mClient = null;
 	    } 
 	    catch (IOException e) {
 	    	LOGGER.error(e);

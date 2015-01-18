@@ -3,7 +3,7 @@
 source test.sh
 
 echo -ne "Services: spawning...\r"
-start_server
+start_server "list_all_services.log"
 echo -ne "Services: registering...\r"
 netcat_start register_v4.in services.in
 netcat_start register_v6.in services.in

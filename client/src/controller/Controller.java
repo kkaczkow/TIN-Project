@@ -12,14 +12,16 @@ import java.util.concurrent.BlockingQueue;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
-import model.Agent;
 import model.ClientMessageParser;
 import model.Model;
 import model.Service;
+import model.messages.AgentListMessage;
 import model.messages.ClientMessage;
 import model.messages.ListAgentMessage;
 import model.messages.ListServicesMessage;
 import model.messages.RegisterMessage;
+import model.messages.RegisteredMessage;
+import model.messages.ServicesListMessage;
 import model.messages.ServicesMessage;
 import view.View;
 import common.events.AgentListEvent;
@@ -38,10 +40,11 @@ public class Controller {
 	
 	private static Map<Class<? extends ClientEvent>, EventHandler> mMapper;
 	private static Connector mConnector;
+	@SuppressWarnings("unused")
 	private static Model mModel;
 	private static View mView;
 	private static String serverName ="localhost";
-	private static int port = 6066;
+	private static int port = 12345;
 	private static BlockingQueue <ClientEvent> mBlockingQueue;
 	private static final Logger LOGGER = Logger.getLogger(Controller.class);
 	
@@ -78,6 +81,8 @@ public class Controller {
 			//@Override
 			public void handle(ClientEvent event) {
 				mConnector.connect(serverName, port);
+				if (mConnector.isServerConnected())
+					mView.connected();
 			}
 		});
 		
@@ -85,7 +90,8 @@ public class Controller {
 			
 			//@Override
 			public void handle(ClientEvent event) {
-				mConnector.disconnect();	
+				mConnector.disconnect();
+				mView.disconnected();
 			}
 		});
 		
@@ -100,6 +106,9 @@ public class Controller {
 					List<Inet6Address> ipv6 = ClientMessageParser.parserIPv6(e.getIpV6());
 					ClientMessage msg = new RegisterMessage(ipv4, ipv6);
 					msg.send(mConnector.getSocket().getOutputStream());
+					RegisteredMessage response = new RegisteredMessage();
+					response.receive(mConnector.getSocket().getInputStream());
+					mView.registered(response.getId());
 				} 
 				catch (UnknownHostException ex) {
 					LOGGER.error(ex);
@@ -128,10 +137,14 @@ public class Controller {
 			
 			//@Override
 			public void handle(ClientEvent event) {
+				@SuppressWarnings("unused")
 				ListAgentsEvent e= (ListAgentsEvent) event;
 				ListAgentMessage msg= new ListAgentMessage();
 				try {
 					msg.send(mConnector.getSocket().getOutputStream());
+					AgentListMessage response = new AgentListMessage();
+					response.receive(mConnector.getSocket().getInputStream());
+					mView.showAgentList(response.getAgents());
 				} catch (IOException ex) {
 					LOGGER.error(ex);
 				}
@@ -143,11 +156,14 @@ public class Controller {
 			//@Override
 			public void handle(ClientEvent event) {
 				ListServicesEvent e= (ListServicesEvent) event;
-				List<Agent> ag= mModel.getAgentsList();
-				List<Service> serv= ClientMessageParser.parserServices(e.getServicesList());
-				ListServicesMessage msg= new ListServicesMessage(ag, serv);
+				List<Integer> agentFilter = e.getAgentFilter();
+				List<Short> servicesFilter= e.getServicesFilter();
+				ListServicesMessage msg= new ListServicesMessage(agentFilter, servicesFilter);
 				try {
 					msg.send(mConnector.getSocket().getOutputStream());
+					ServicesListMessage response = new ServicesListMessage();
+					response.receive(mConnector.getSocket().getInputStream());
+					mView.showServicesList(response.getServices());
 				} catch (IOException ex) {
 					LOGGER.error(ex);
 				}
@@ -219,9 +235,4 @@ public class Controller {
 	public boolean isServerConnected() {
 		return mConnector.isServerConnected();
 	}
-	
-	public void setPortNumber(final int port) {
-		this.port = port;
-	}
-
 }

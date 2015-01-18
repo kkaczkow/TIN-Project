@@ -23,6 +23,7 @@ std::ostream& server::log(logging::level lvl) {
 server::server(boost::asio::io_service& io_service) :
   acceptor(io_service, tcp::endpoint(tcp::v4(), PORT)),
   socket(io_service) {
+  log(level::INFO) << "Server started" << std::endl;
   do_accept();
 }
 

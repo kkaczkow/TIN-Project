@@ -3,7 +3,7 @@
 source test.sh
 
 echo -ne "Agents: spawning...\r"
-start_server
+start_server "list_agents.log"
 echo -ne "Agents: registering...\r"
 netcat_start register_v4.in
 netcat_start register_v6.in

@@ -11,6 +11,8 @@ public class ClientMessageParser {
 	
 	public static List<Inet4Address> parserIPv4(String ipV4) throws UnknownHostException {
 		ArrayList<Inet4Address> result= new ArrayList<Inet4Address>();
+		if (ipV4.isEmpty())
+			return result;
 		String[] ips = ipV4.split(" ");
 		for (String ip : ips)
 			result.add((Inet4Address)InetAddress.getByName(ip));
@@ -19,6 +21,8 @@ public class ClientMessageParser {
 	
 	public static List<Inet6Address> parserIPv6(String ipV6) throws UnknownHostException {
 		ArrayList<Inet6Address> result= new ArrayList<Inet6Address>();
+		if (ipV6.isEmpty())
+			return result;
 		String[] ips = ipV6.split(" ");
 		for (String ip : ips)
 			result.add((Inet6Address)InetAddress.getByName(ip));
@@ -32,6 +36,8 @@ public class ClientMessageParser {
 	 */
 	public static List<Service> parserServices (String serv) {
 		ArrayList<Service> result= new ArrayList<Service>();
+		if (serv.isEmpty())
+			return result;
 		String[] services= serv.split(" ");
 		for (String s : services) {
 			result.add(new Service(s));

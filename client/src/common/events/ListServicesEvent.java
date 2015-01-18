@@ -1,34 +1,44 @@
 package common.events;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import model.Agent;
 import common.CommandType;
 
 public class ListServicesEvent extends ClientEvent {
 
-	private List<Agent> agentList;
-	private String servicesList;
+	private final List<Integer> agentFilter;
+	private final List<Short> servicesFilter;
 	
-	public ListServicesEvent(List<Agent> ag, String serv) {
+	public ListServicesEvent(List<Integer> agentFilter, List<Short> servicesFilter) {
 		super(CommandType.LIST_SERVICES);
-		setAgentList(ag);
-		setServicesList(serv);
+		this.agentFilter = agentFilter;
+		this.servicesFilter = servicesFilter;
 	}
 
-	public String getServicesList() {
-		return servicesList;
+	public ListServicesEvent(String agentFilter, String serviceFilter) {
+		super(CommandType.LIST_SERVICES);
+		this.agentFilter = new ArrayList<Integer>();
+		this.servicesFilter = new ArrayList<Short>();
+		if (!agentFilter.isEmpty()) {
+			String[] ids = agentFilter.split(" ");
+			for (String id : ids) {
+				this.agentFilter.add(Integer.parseInt(id));
+			}
+		}
+		if (!serviceFilter.isEmpty()) {
+			String[]ids = serviceFilter.split(" ");
+			for (String id : ids) {
+				this.servicesFilter.add(Short.parseShort(id));
+			}
+		}
 	}
 
-	public void setServicesList(String servicesList) {
-		this.servicesList = servicesList;
+	public List<Integer> getAgentFilter() {
+		return agentFilter;
 	}
 
-	public List<Agent> getAgentList() {
-		return agentList;
-	}
-
-	public void setAgentList(List<Agent> agentList) {
-		this.agentList = agentList;
+	public List<Short> getServicesFilter() {
+		return servicesFilter;
 	}
 }

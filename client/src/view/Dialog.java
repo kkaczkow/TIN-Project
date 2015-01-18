@@ -1,19 +1,27 @@
 package view;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
+import model.Agent;
+import model.Service;
 import common.events.ClientEvent;
 import common.events.ConnectEvent;
 import common.events.DisconnectEvent;
@@ -24,6 +32,9 @@ import common.events.ServicesEvent;
 
 public class Dialog extends JFrame {
 	
+	private static final long serialVersionUID = 1L;
+	
+	private JLabel mStatusLabel;
 	private JButton mConnectBtn;
 	private JButton mDisconnectBtn;
 	private JButton mListAgentsBtn;
@@ -31,10 +42,6 @@ public class Dialog extends JFrame {
 	private JButton mServicesBtn;
 	private JButton mRegisterBtn;
 	private JButton mConnRequestBtn;
-	private JLabel ipv4Label;
-	private JLabel ipv6Label;
-	private JTextArea ipv4TextBox;
-	private JTextArea ipv6TextBox;
 	private BlockingQueue<ClientEvent> mBlockingQueue;
 
     public Dialog(BlockingQueue<ClientEvent> mBlockingQueue) {
@@ -48,12 +55,12 @@ public class Dialog extends JFrame {
         setMinimumSize(new Dimension(400, 140));
         
         panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        panel.setLayout(new GridLayout(3, 4, 10, 10));
+        panel.setLayout(new GridLayout(0, 1, 10, 10));
         
-        initTextBoxes();
         initLabels();
         initButtons();
         setPanel(panel);
+        showButtons(false, false);
         
         pack();
         setTitle("Client GUI");
@@ -61,17 +68,8 @@ public class Dialog extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 	
-	private void initTextBoxes() {
-		ipv4TextBox = new JTextArea();
-		ipv6TextBox = new JTextArea();
-		
-	}
-	
 	private void initLabels() {
-		ipv4Label = new JLabel();
-		ipv6Label = new JLabel();
-		ipv4Label.setText("Type ipv4: ");
-		ipv6Label.setText("Type ipv6: ");
+		mStatusLabel = new JLabel("Disconnected");
 	}
     
     private void initButtons() {
@@ -100,48 +98,127 @@ public class Dialog extends JFrame {
         mListServicesBtn.setToolTipText("Send request to the server for services list");
         mListServicesBtn.addActionListener(new ActionListener() { 
         	  public void actionPerformed(ActionEvent e) { 
-        		  //TODO add arg to ListServicesEvent constr
-        		  //mBlockingQueue.add(new ListServicesEvent());
-        }});
+        		  String agentFilter = JOptionPane.showInputDialog("Agent filter");
+        		  String serviceFilter = JOptionPane.showInputDialog("Service filter");
+        		  mBlockingQueue.add(new ListServicesEvent(agentFilter, serviceFilter));
+        	  }
+        });
         
         mServicesBtn = new JButton("Send my services");
         mServicesBtn.setToolTipText("Send my services to the server");
         mServicesBtn.addActionListener(new ActionListener() { 
         	  public void actionPerformed(ActionEvent e) { 
-        		  String ips = ipv4TextBox.getText();
-        		  ips.concat(" " + ipv6TextBox.getText());
-        		  mBlockingQueue.add(new ServicesEvent(ips));
-        }});
+        		  String services = JOptionPane.showInputDialog("Services list");
+        		  mBlockingQueue.add(new ServicesEvent(services));
+        	  }
+        });
         
         mRegisterBtn = new JButton("Register");
         mRegisterBtn.setToolTipText("Send register request to the server");
-        mRegisterBtn.addActionListener(new ActionListener() { 
-        	  public void actionPerformed(ActionEvent e) { 
-        		  String ipv4 = ipv4TextBox.getText();
-        		  String ipv6 = ipv6TextBox.getText();
-        		  mBlockingQueue.add(new RegisterEvent(ipv4, ipv6));
-        }});
+		mRegisterBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String ipv4 = JOptionPane.showInputDialog("IP v4 list");
+				String ipv6 = JOptionPane.showInputDialog("IP v6 list");
+				mBlockingQueue.add(new RegisterEvent(ipv4, ipv6));
+			}
+		});
         
         mConnRequestBtn = new JButton("NAT connection");
         mConnRequestBtn.setToolTipText("Connection with another client behind NAT");
-        mConnRequestBtn.addActionListener(new ActionListener() { 
-        	  public void actionPerformed(ActionEvent e) { 
-        		  //TODO Add ConnRequestEvent constr.
-        		  //mBlockingQueue.add(new ListServicesEvent());
-        }});
+		mConnRequestBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+
+			}
+		});
     }
     
+    private void showButtons(boolean connected, boolean registered) {
+		mConnectBtn.setVisible(!connected);
+		mDisconnectBtn.setVisible(connected);
+		mListAgentsBtn.setVisible(connected);
+		mListServicesBtn.setVisible(connected);
+		mRegisterBtn.setVisible(connected&&!registered);
+		mServicesBtn.setVisible(connected&&registered);
+		mConnRequestBtn.setVisible(connected&&registered);
+	}	
+    
+    void connected() {
+    	showButtons(true, false);
+    	mStatusLabel.setText("Connected");
+    }
+    
+    void disconnected() {
+		showButtons(false, false);
+		mStatusLabel.setText("Connected");
+    }
+    
+    void registered(final int id) {
+    	showButtons(true, true);
+    	mStatusLabel.setText("Registered with id: "+Integer.toString(id));
+    }
+    
+    public void unregistered() {
+    	showButtons(true, false);
+    	mStatusLabel.setText("Connected");
+	}
+	
+	public void showAgentList(List<Agent> list) {
+		StringBuilder sb = new StringBuilder();
+		for (Agent agent : list) {
+			sb.append("Agent #");
+			sb.append(agent.getID());
+			sb.append('\n');
+			for (Inet4Address addr : agent.getIPv4()) {
+				sb.append('\t');
+				sb.append(addr.getHostAddress());
+				sb.append('\n');
+			}
+			for (Inet6Address addr : agent.getIPv6()) {
+				sb.append('\t');
+				sb.append(addr.getHostAddress());
+				sb.append('\n');
+			}
+		}
+		JDialog dialog = new JDialog(this, "Agent list");
+		JPanel panel = (JPanel)dialog.getContentPane();
+		JTextArea textArea = new JTextArea();
+		textArea.setEditable(false);
+		textArea.setText(sb.toString());
+		panel.add(textArea);
+		dialog.setSize(300, 500);
+		dialog.setVisible(true);
+	}
+	
+	public void showServices(Map<Integer, List<Service>> services) {
+		StringBuilder sb = new StringBuilder();
+		for (Entry<Integer, List<Service>> entry : services.entrySet()) {
+			sb.append("Agent #");
+			sb.append(entry.getKey());
+			sb.append('\n');
+			for (Service service : entry.getValue()) {
+				sb.append('\t');
+				sb.append(service.toString());
+				sb.append('\n');
+			}
+		}
+		JDialog dialog = new JDialog(this, "Services list");
+		JPanel panel = (JPanel)dialog.getContentPane();
+		JTextArea textArea = new JTextArea();
+		textArea.setEditable(false);
+		textArea.setText(sb.toString());
+		panel.add(textArea);
+		dialog.setSize(300, 500);
+		dialog.setVisible(true);
+	}
+    
     private void setPanel(JPanel panel) {
+    	panel.add(mStatusLabel);
     	panel.add(mConnectBtn);
     	panel.add(mDisconnectBtn);
         panel.add(mListAgentsBtn);
         panel.add(mListServicesBtn);
-        panel.add(ipv4Label);
-        panel.add(ipv4TextBox);
-        panel.add(ipv6Label);
-        panel.add(ipv6TextBox);
         panel.add(mRegisterBtn);
         panel.add(mServicesBtn);
-        panel.add(mConnRequestBtn);
+        //panel.add(mConnRequestBtn);
     }
 }

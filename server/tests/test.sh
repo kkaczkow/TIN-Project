@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NETCAT="nc"
+NETCAT="nc -q -1"
 SERVER_PID=0
 SERVER_BIN="../src/server"
 SERVER_HOST="localhost"
@@ -17,20 +17,25 @@ function kill_server() {
 }
 
 function start_server() {
-  "$SERVER_BIN" >/dev/null 2>&1 &
+  LOG="/dev/null"
+  if [ "x$1" != "x" ]; then
+    LOG="$1"
+  fi
+  "$SERVER_BIN" >"$LOG" 2>&1 &
   SERVER_PID=$!
+  sleep 0.5
 }
 
 function respawn_server() {
   kill_server
-  start_server
+  start_server "$1"
 }
 
 function simple_testcase() {
   echo -n "$1: "
   if [ "x$1" != "xnorespawn" ]; then
     echo -ne "\r$1: spawning..."
-    respawn_server
+    respawn_server "$2.log"
   else
     shift
   fi

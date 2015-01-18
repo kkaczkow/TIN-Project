@@ -15,10 +15,9 @@ namespace AgentRepo3000 {
 using logging::level;
 
 std::ostream& agent_session::log(logging::level lvl) const {
-  auto endpoint = socket.remote_endpoint();
   return std::clog << "["
-    << endpoint.address().to_string()
-    << ':' << endpoint.port()
+    << m_address.to_string()
+    << ':' << m_port
     << "]: ";
 }
 
@@ -63,6 +62,7 @@ static proto::message registered_id = proto::message::REGISTERED_ID;
 void agent_session::handle_register() {
   auto self(shared_from_this());
   id = storage.register_agent();
+  networkId = htonl(id);
   data = storage.agent(id);
   auto reader = std::make_shared<ip_address_list_reader>(socket);
   reader->read([this,self](error_code ec, std::vector<boost::asio::ip::address> ip_addresses) {
@@ -70,7 +70,7 @@ void agent_session::handle_register() {
       data->ip_addresses = std::move(ip_addresses);
       std::vector<boost::asio::const_buffer> buffers{
 	  boost::asio::buffer(&registered_id, 1),
-	  boost::asio::buffer(&id, 4)
+	  boost::asio::buffer(&networkId, 4)
       };
       async_write(socket, buffers, [this,self](error_code ec, std::size_t) {
 	log(level::INFO) << "Registered with id: " << id << std::endl;

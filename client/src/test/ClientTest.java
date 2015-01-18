@@ -52,7 +52,6 @@ public class ClientTest {
 		    }
 		};
 		serverThread.start();
-		mController.setPortNumber(port);
 		mBlockingQueue.add(new ConnectEvent());
 		mController.processEvents();
 		
@@ -85,7 +84,6 @@ public class ClientTest {
 			}
 		};
 		serverThread.start();
-		mController.setPortNumber(port);
 		mBlockingQueue.add(new ConnectEvent());
 		mController.processEvents();
 		
@@ -120,7 +118,6 @@ public class ClientTest {
 			}
 		};
 		serverThread.start();
-		mController.setPortNumber(port);
 		mBlockingQueue.add(new ConnectEvent());
 		mController.processEvents();
 				

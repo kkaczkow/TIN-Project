@@ -11,11 +11,22 @@ public class Service {
 	 */
 	public Service (String data) {
 		String[] serv= data.split(";");
-		flags= Byte.parseByte(serv[0]);
+		flags= serv[0].equals("TCP") ? (byte)1 : (byte)2;
 		id= Short.parseShort(serv[1]);
 		port= Short.parseShort(serv[2]);
 	}
 	
+	public Service(byte flags, short id, short port) {
+		this.flags = flags;
+		this.id = id;
+		this.port = port;
+	}
+
+	@Override
+	public String toString() {
+		return id + " " + ((flags == (byte)1) ? "TCP" : "UDP") + " : " + port;
+	}
+
 	public byte getFlags() {
 		return flags;
 	}

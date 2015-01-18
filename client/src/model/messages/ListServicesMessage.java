@@ -5,34 +5,31 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
-import model.Agent;
-import model.Service;
 import common.CommandType;
 
 public class ListServicesMessage extends ClientMessage {
 
-	List<Agent> agents;
-	List<Service> services;
+	List<Integer> agentsFilter;
+	List<Short> servicesFilter;
 	
-	public ListServicesMessage(List<Agent> ag, List<Service> serv) {
+	public ListServicesMessage(List<Integer> agentsFilter, List<Short> servicesFilter) {
 		super(CommandType.LIST_SERVICES.getByteToSend());
-		agents= ag;
-		services= serv;
+		this.agentsFilter= agentsFilter;
+		this.servicesFilter= servicesFilter;
 	}
 
 	@Override
 	public void send(OutputStream ostream) throws IOException {
 		DataOutputStream dostream = new DataOutputStream(ostream);
 		dostream.writeByte(type);
-		for (Agent agent : agents) {
-			dostream.writeInt(agent.getID());
+		for (Integer agent : agentsFilter) {
+			dostream.writeInt(agent);
 		}
-		dostream.writeByte(0);
-		
-		for (Service service : services) {
-			dostream.writeShort(service.getId());
+		dostream.writeInt(0);
+		for (Short service : servicesFilter) {
+			dostream.writeShort(service);
 		}
-		dostream.writeByte(0);
+		dostream.writeShort(0);
 		dostream.flush();
 	}
 

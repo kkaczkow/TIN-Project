@@ -20,8 +20,11 @@ class agent_data;
  */
 class agent_session : public std::enable_shared_from_this<agent_session> {
   boost::asio::ip::tcp::socket socket;
+  boost::asio::ip::address m_address;
+  uint16_t m_port;
   agent_storage& storage;
   uint32_t id;
+  uint32_t networkId;
   std::shared_ptr<agent_data> data;
 
   proto::message message_type;
@@ -35,7 +38,8 @@ class agent_session : public std::enable_shared_from_this<agent_session> {
 
 public:
   agent_session(boost::asio::ip::tcp::socket socket, agent_storage& storage)
-    : socket(std::move(socket)), storage(storage) {}
+    : socket(std::move(socket)), m_address(this->socket.remote_endpoint().address()),
+    m_port(this->socket.remote_endpoint().port()), storage(storage) {}
   ~agent_session();
   void run();
 };

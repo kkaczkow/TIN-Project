@@ -1,0 +1,10 @@
+/ClientMessage.class
+/ConnRequestMessage.class
+/ListAgentMessage.class
+/ListServicesMessage.class
+/RegisterMessage.class
+/ServicesMessage.class
+/ServerMessage.class
+/RegisteredMessage.class
+/ServicesListMessage.class
+/AgentListMessage.class
