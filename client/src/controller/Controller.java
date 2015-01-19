@@ -8,10 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-
 import model.ClientMessageParser;
 import model.Model;
 import model.Service;
@@ -53,7 +50,6 @@ public class Controller {
 		Controller.mConnector = new Connector();
 		Controller.mModel = mModel;
 		Controller.mBlockingQueue = mBlockingQueue;
-		BasicConfigurator.configure();
 		setup();
 	}
 	
@@ -81,7 +77,7 @@ public class Controller {
 			//@Override
 			public void handle(ClientEvent event) {
 				mConnector.connect(serverName, port);
-				if (mConnector.isServerConnected())
+				if (mConnector.isServerConnected() && mView != null)
 					mView.connected();
 			}
 		});
@@ -91,7 +87,8 @@ public class Controller {
 			//@Override
 			public void handle(ClientEvent event) {
 				mConnector.disconnect();
-				mView.disconnected();
+				if(mView != null)
+					mView.disconnected();
 			}
 		});
 		
@@ -234,5 +231,26 @@ public class Controller {
 	 */
 	public boolean isServerConnected() {
 		return mConnector.isServerConnected();
+	}
+	
+	/**
+	 * For testing purposes
+	 */
+	public void setPortNumber(final int port) {
+		this.port = port;
+	}
+	
+	/**
+	 * For testing purposes
+	 */
+	public String getData() {
+		return mConnector.getData();
+	}
+	
+	/**
+	 * For testing purposes
+	 */
+	public void sendData(final byte message) {
+		mConnector.sendData(message);
 	}
 }

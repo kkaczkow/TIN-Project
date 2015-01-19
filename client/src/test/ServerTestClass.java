@@ -7,6 +7,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 
+import org.apache.log4j.Logger;
+
 /**
  * A dummy server class
  *
@@ -17,6 +19,7 @@ public class ServerTestClass{
 	private Socket server;
 	private boolean isClientConnected;
 	private static int serverConnectionCounter;
+	private static final Logger LOGGER = Logger.getLogger(ServerTestClass.class);
 
 	public ServerTestClass(final int port) {
 		try {
@@ -25,7 +28,7 @@ public class ServerTestClass{
 			serverSocket.setSoTimeout(10000);
 
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.error(e);
 		}
 	}
 
@@ -37,13 +40,16 @@ public class ServerTestClass{
 		}
 	}
 	
-	public void runReadTest() {
+	public String runReadTest() {
+		String receivedMessage = null;
 		while (true && serverConnectionCounter == 0) {
 			++serverConnectionCounter;
 			connect();
-			read();
+			receivedMessage = read();
 			disconnect();
+			
 		}
+		return receivedMessage;
 	}
 	
 	public void runWriteTest(final String message) {
@@ -56,35 +62,38 @@ public class ServerTestClass{
 	}
 
 	private void connect() {
-		System.out.println("Server: Waiting for client on port "
+		LOGGER.info("Server: Waiting for client on port "
 				+ serverSocket.getLocalPort() + "...");
 		try {
 			server = serverSocket.accept();
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.error(e);
 		}
-		System.out.println("Server: Just connected to "
+		LOGGER.info("Server: Just connected to "
 				+ server.getLocalSocketAddress());
 		isClientConnected = true;
 	}
 	
-	private void read() {
+	private String read() {
+		String receivedMessage = null;
 		DataInputStream in;
 		try {
 			in = new DataInputStream(server.getInputStream());
-			System.out.println(in.readUTF()); 
+			receivedMessage = Byte.toString(in.readByte());
+			LOGGER.info("Server: Read: " + receivedMessage);
 		} catch (IOException e) {
+			LOGGER.error(e);
 			e.printStackTrace();
 		}
+		return receivedMessage;
 	}
 	
 	private void write(final String message) {
 		try {
 			DataOutputStream out = new DataOutputStream(server.getOutputStream());
-			out.writeUTF("Thank you for connecting to " + server.getLocalSocketAddress() + "\nGoodbye!");
+			out.writeUTF(message);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOGGER.error(e);
 		}
 	}
 	
@@ -93,10 +102,9 @@ public class ServerTestClass{
 			server.close();
 			serverSocket.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOGGER.error(e);
 		}
-		System.out.println("Server: Close()");
+		LOGGER.info("Server: Close()");
 	}
 
 	public boolean isClientConnected() {

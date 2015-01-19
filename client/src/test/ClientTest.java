@@ -12,7 +12,6 @@ import common.events.ClientEvent;
 import common.events.ConnectEvent;
 import common.events.DisconnectEvent;
 import controller.Controller;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -20,7 +19,7 @@ public class ClientTest {
 	private static ServerTestClass mServer;
 	private static Controller mController;
 	private static BlockingQueue<ClientEvent> mBlockingQueue;
-	private static int port = 6000;
+	private static int port = 12345;
 	private static final Logger LOGGER = Logger.getLogger(ClientTest.class);
 	
 	/**
@@ -31,7 +30,6 @@ public class ClientTest {
 		LOGGER.info("init():");
 		mBlockingQueue = new LinkedBlockingQueue<ClientEvent>();
 		mController = new Controller(mBlockingQueue);
-		BasicConfigurator.configure();
 	}
 
 	/**
@@ -44,7 +42,7 @@ public class ClientTest {
 		mServer = new ServerTestClass(++port);
 		mServer.setServerConnectionCounter(0);
 		
-		// polaczenie serwer- klient
+		// connect
 		Thread serverThread = new Thread()
 		{
 		    public void run() {
@@ -52,10 +50,11 @@ public class ClientTest {
 		    }
 		};
 		serverThread.start();
+		mController.setPortNumber(port);
 		mBlockingQueue.add(new ConnectEvent());
 		mController.processEvents();
 		
-		// rozlaczenie
+		// disconnect
 		mBlockingQueue.add(new DisconnectEvent());
 		if (serverThread != null) {
 			serverThread.interrupt();
@@ -71,31 +70,36 @@ public class ClientTest {
 	@Test
 	public void WriteToServerTest() {
 		LOGGER.info("WriteToServerTest():");
+		final String messageToSend = "test message";
 		
 		mServer = new ServerTestClass(++port);
 		mServer.setServerConnectionCounter(0);
 		
-		// polaczenie serwer- klient
+		// connect and send a message
 		Thread serverThread = new Thread()
 		{
 			public void run() {
-				mServer.runConnectionTest();
-				//mServer.runWriteTest("test message");
+				int i = 0;
+				while (i == 0) {
+					mServer.runWriteTest(messageToSend);
+					// check if sent and received message are the same
+					assertEquals(messageToSend, mController.getData());
+					++i;
+				}
 			}
 		};
 		serverThread.start();
+		mController.setPortNumber(port);
 		mBlockingQueue.add(new ConnectEvent());
 		mController.processEvents();
+		sleep(100);
 		
-		//TODO
-		
-		// rozlaczenie
+		// disconnect
 		mBlockingQueue.add(new DisconnectEvent());
 		if (serverThread != null) {
 			serverThread.interrupt();
         }
 		mController.processEvents();
-		assertTrue(true);
 		sleep(100);
 	}
 	
@@ -105,25 +109,32 @@ public class ClientTest {
 	@Test
 	public void ReadFromServerTest() {
 		LOGGER.info("ReadFromServerTest():");
+		final byte messageToSend = 4;
 		
 		mServer = new ServerTestClass(++port);
 		mServer.setServerConnectionCounter(0);
 		
-		// polaczenie serwer- klient
+		// connect and receive the message
 		Thread serverThread = new Thread()
 		{
 			public void run() {
-				mServer.runConnectionTest();
-				//mServer.runReadTest();
+				int i = 0;
+				while (i == 0) {
+					mController.setPortNumber(port);
+					mBlockingQueue.add(new ConnectEvent());
+					mController.processEvents();
+					mController.sendData(messageToSend);
+					++i;
+				}
+					
+					
 			}
 		};
 		serverThread.start();
-		mBlockingQueue.add(new ConnectEvent());
-		mController.processEvents();
-				
-		//TODO
-				
-		// rozlaczenie
+		assertEquals(Byte.toString(messageToSend), mServer.runReadTest());
+		sleep(100);	
+		
+		// disconnect
 		mBlockingQueue.add(new DisconnectEvent());
 		if (serverThread != null) {
 			serverThread.interrupt();
@@ -131,18 +142,6 @@ public class ClientTest {
 		mController.processEvents();
 		assertTrue(true);
 		sleep(100);
-	}
-	
-	/**
-	 * Unimplemented test
-	 */
-	@Test
-	public void AnotherTest() {
-		
-		//TODO
-		//fail("Not yet implemented");
-		assertTrue(true);
-		
 	}
 	
 	/**
@@ -160,7 +159,7 @@ public class ClientTest {
 		try {
 			Thread.sleep(timeInterval);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			LOGGER.error(e);
 		}
 	}
 

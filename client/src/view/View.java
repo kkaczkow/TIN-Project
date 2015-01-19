@@ -21,7 +21,7 @@ public class View{
 	
 	public void connected() {
 		SwingUtilities.invokeLater(new Runnable() {
-			@Override
+			//@Override
 			public void run() {
 				mDialog.connected();
 			}
@@ -30,7 +30,7 @@ public class View{
 	
 	public void disconnected() {
 		SwingUtilities.invokeLater(new Runnable() {
-			@Override
+			//@Override
 			public void run() {
 				mDialog.disconnected();
 			}
@@ -39,7 +39,7 @@ public class View{
 	
 	public void registered(final int id) {
 		SwingUtilities.invokeLater(new Runnable() {
-			@Override
+			//@Override
 			public void run() {
 				mDialog.registered(id);
 			}
@@ -48,7 +48,7 @@ public class View{
 	
 	public void showAgentList(final List<Agent> list) {
 		SwingUtilities.invokeLater(new Runnable() {
-			@Override
+			//@Override
 			public void run() {
 				mDialog.showAgentList(list);
 			}
@@ -57,7 +57,7 @@ public class View{
 	
 	public void showServicesList(final Map<Integer, List<Service>> map) {
 		SwingUtilities.invokeLater(new Runnable() {
-			@Override
+			//@Override
 			public void run() {
 				mDialog.showServices(map);
 			}
